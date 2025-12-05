@@ -29,7 +29,6 @@ const transporter = nodemailer.createTransport({
 
 
 module.exports.signup = async (req, res) => {
-    console.log("my req body", req.body);
     try {
         const { fullname, email, phonenumber, password } = req.body;
 
@@ -47,11 +46,12 @@ module.exports.signup = async (req, res) => {
             isVerified: false
         });
         console.log(user);
-        
-
-        const verifyLink = `http://localhost:8080/verify-email?token=${token}`;
 
 
+        const frontendUrl = process.env.FRONTEND_URL;
+        const verifyLink = `${frontendUrl}/verify-email/${token}`; // ✅ path param style
+
+        // const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
         await transporter.sendMail({
             from: `"LaundryHub" <${process.env.App_Email}>`,
@@ -75,89 +75,125 @@ module.exports.signup = async (req, res) => {
 };
 
 
-// module.exports.verifyEmail = async (req, res) => {
-//     try {
-//         const { token } = req.query;
-
-//         const user = await Userschema.findOne({ emailToken: token });
-
-//         if (!user) return res.status(400).send("Invalid token");
-
-//         user.emailToken = null;
-//         user.isVerified = true;
-//         await user.save();
-
-//         res.redirect("http://localhost:8080/login");
-
-//     } catch (err) {
-//         res.status(500).send("Server error");
-//     }
-// };
-
-
-module.exports.verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    const user = await Userschema.findOne({ emailToken: token });
-    if (!user) {
-      return res.status(400).json({ msg: "Invalid or expired token" });
-    }
-
-    // Mark verified
-    user.isVerified = true;
-    user.emailToken = null;
-    await user.save();
-
-    return res.json({ msg: "Email verified successfully" });
-  } catch (err) {
-    return res.status(500).json({ msg: "Server error" });
-  }
-};
 
 
 
 
 module.exports.login = async (req, res) => {
     console.log(req.body);
-    
-  try {
-    const { email, password } = req.body;
 
-    // Check if user exists (email or phone)
-    const user = await Userschema.findOne({
-      $or: [{ email }, { phonenumber: email }]
-    });
+    try {
+        const { email, password } = req.body;
 
-    if (!user)
-      return res.status(400).json({ message: "User not found" });
+        // Check if user exists (email or phone)
+        const user = await Userschema.findOne({
+            $or: [{ email }, { phonenumber: email }]
+        });
 
-    // Check if email is verified
-    if (!user.isVerified)
-      return res.status(400).json({ message: "Email is not verified" });
+        if (!user)
+            return res.status(400).json({ message: "User not found" });
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid password" });
+        // Check if email is verified
+        if (!user.isVerified)
+            return res.status(400).json({ message: "Email is not verified" });
 
-    // Generate token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        // Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch)
+            return res.status(400).json({ message: "Invalid password" });
 
-    res.status(200).json({
-      message: "Login successful",
-      user: {
-        id: user._id,
-        fullname: user.fullname,
-        email: user.email,
-        phonenumber: user.phonenumber,
-        token
-      }
-    });
+        // Generate token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
-  }
+        res.status(200).json({
+            message: "Login successful",
+            user: {
+                id: user._id,
+                fullname: user.fullname,
+                email: user.email,
+                phonenumber: user.phonenumber,
+                token
+            }
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Server error" });
+    }
 };
 
+
+module.exports.verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.params; // ✅ get token from URL path
+
+        const user = await Userschema.findOne({ emailToken: token });
+        if (!user) {
+            return res.status(400).json({ msg: "Invalid or expired token" });
+        }
+
+        // Mark verified
+        user.isVerified = true;
+        user.emailToken = null;
+        await user.save();
+
+        return res.json({ msg: "Email verified successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ msg: "Server error" });
+    }
+};
+
+
+
+
+module.exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await Userschema.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
+
+        // Generate new token
+        const emailToken = crypto.randomBytes(32).toString("hex");
+        user.emailToken = emailToken;
+        await user.save();
+
+        // Send email
+
+        // const url = `${frontendUrl}/verify-email/${emailToken}`;
+
+
+        const frontendUrl = process.env.FRONTEND_URL;
+
+        const url = `${frontendUrl}/verify-email/${emailToken}`; // frontend verification page
+        console.log(url);
+        
+        // await transporter.sendMail({
+        //     to: user.email,
+        //     subject: "Verify your email",
+        //     html: `Click <a href="${url}">here</a> to verify your email.`,
+        // });
+
+
+        await transporter.sendMail({
+            from: `"LaundryHub" <${process.env.App_Email}>`,
+            to: user.email,
+            subject: "Verify Your Email",
+            html: `
+                <h2>Verify Your Email</h2>
+                <p>Click the link below to verify your account:</p>
+                <a href="${url}" style="background:#4f46e5;color:white;padding:10px 20px;border-radius:6px;text-decoration:none">
+                    Verify Email
+                </a>
+            `
+        });
+
+        res.status(200).json({ message: "Verification email sent" });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
