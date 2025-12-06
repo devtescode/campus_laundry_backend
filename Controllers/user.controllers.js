@@ -29,6 +29,7 @@ const transporter = nodemailer.createTransport({
 
 
 module.exports.signup = async (req, res) => {
+    console.log(req.body)
     try {
         const { fullname, email, phonenumber, password } = req.body;
 
@@ -114,9 +115,11 @@ module.exports.login = async (req, res) => {
                 phonenumber: user.phonenumber,
                 token
             }
+            
         });
+        console.log(user, "user");
 
-    } catch (err) {
+    } catch (err) { 
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
