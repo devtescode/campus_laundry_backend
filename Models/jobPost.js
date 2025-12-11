@@ -16,7 +16,13 @@ const JobPostSchema = new mongoose.Schema(
     description: String,
     image: String, // Cloudinary URL if uploading
     status: { type: String, enum: ["Pending", "Applied", "In Progress", "Completed"], default: "Pending" },
-    applicant: { type: mongoose.Schema.Types.ObjectId, ref: "userlaundry" }, // the washer applying
+    // applicant: { type: mongoose.Schema.Types.ObjectId, ref: "userlaundry" }, // the washer applying
+    applicant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "userlaundry",
+      default: null
+    }
+
   },
   { timestamps: true }
 );
