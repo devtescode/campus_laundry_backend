@@ -21,7 +21,8 @@ const JobPostSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "userlaundry",
       default: null
-    }
+    },
+     applicantName: { type: String, default: null }// store applicant's name for frontend
 
   },
   { timestamps: true }

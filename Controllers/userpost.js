@@ -153,60 +153,123 @@ module.exports.delectuserpost = async (req, res) => {
 // import User from "../models/userlaundry.js";
 // import Notification from "../models/Notification.js";
 
-  module.exports.userapplyjob = async (req, res) => {
-    try {
-      const { jobId, userId } = req.body;
+  // module.exports.userapplyjob = async (req, res) => {
+  //   try {
+  //     const { jobId, userId } = req.body;
 
-      if (!jobId || !userId) {
-        return res.status(400).json({ message: "Job ID and User ID are required." });
-      }
+  //     if (!jobId || !userId) {
+  //       return res.status(400).json({ message: "Job ID and User ID are required." });
+  //     }
 
-      const job = await jobPost.findById(jobId);
+  //     const job = await jobPost.findById(jobId);
 
-      if (!job) {
-        return res.status(404).json({ message: "Job not found." });
-      }
+  //     if (!job) {
+  //       return res.status(404).json({ message: "Job not found." });
+  //     }
 
-      // Prevent applying to own job
-      if (job.userId.toString() === userId) {
-        return res.status(400).json({ message: "You cannot apply for your own job." });
-      }
+  //     // Prevent applying to own job
+  //     if (job.userId.toString() === userId) {
+  //       return res.status(400).json({ message: "You cannot apply for your own job." });
+  //     }
 
-      // Job must be pending
-      if (job.status !== "Pending") {
-        return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
-      }
+  //     // Job must be pending
+  //     if (job.status !== "Pending") {
+  //       return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
+  //     }
 
-      // Update the job
-      job.status = "Applied";
-      job.applicant = userId;
-      await job.save();
+  //     // Update the job
+  //     job.status = "Applied";
+  //     job.applicant = userId;
+  //     await job.save();
 
-      // Get applicant details
-      const applicant = await Userschema.findById(userId);
-      const applicantName = applicant.fullname;
+  //     // Get applicant details
+  //     const applicant = await Userschema.findById(userId);
+  //     const applicantName = applicant.fullname;
 
-      console.log(job, "applied job");
+  //     console.log(job, "applied job");
 
-      // Create notification for job owner
-      const message = `${applicantName} applied for your ${job.type} job!`;
+  //     // Create notification for job owner
+  //     const message = `${applicantName} applied for your ${job.type} job!`;
 
-      console.log(message, "notification message");
-      await Notification.create({
-        userId: job.userId,
-        message,
-        unread: true
-      });
+  //     console.log(message, "notification message");
+  //     await Notification.create({
+  //       userId: job.userId,
+  //       message,
+  //       unread: true
+  //     });
 
-      return res.status(200).json({
-        message: "You have successfully applied for this job.",
-        job,
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Server error.", error: error.message });
+  //     return res.status(200).json({
+  //       message: "You have successfully applied for this job.",
+  //       job,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //     return res.status(500).json({ message: "Server error.", error: error.message });
+  //   }
+  // };
+
+
+
+module.exports.userapplyjob = async (req, res) => {
+  try {
+    const { jobId, userId } = req.body;
+
+    if (!jobId || !userId) {
+      return res.status(400).json({ message: "Job ID and User ID are required." });
     }
-  };
+
+    // Find the job
+    const job = await jobPost.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found." });
+    }
+
+    // Prevent poster from applying
+    if (job.userId.toString() === userId) {
+      return res.status(400).json({ message: "You cannot apply for your own job." });
+    }
+
+    // Job must be pending
+    if (job.status !== "Pending") {
+      return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
+    }
+
+    // Get applicant details
+    const applicant = await Userschema.findById(userId);
+    if (!applicant) {
+      return res.status(404).json({ message: "Applicant not found." });
+    }
+
+    const applicantName = applicant.fullname;
+
+    // Update the job with applicant info
+    job.status = "Applied";
+    job.applicant = userId;        // store applicant ID
+    job.applicantName = applicantName; // store applicant name for frontend display
+    await job.save();
+
+    console.log(applicantName, "Applican name");
+    
+
+    // Create notification for the poster
+    const message = `${applicantName} applied for your ${job.type} job!`;
+    await Notification.create({
+      userId: job.userId, // the poster
+      message,
+      unread: true
+    });
+
+    return res.status(200).json({
+      message: "You have successfully applied for this job.",
+      job,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
+
 
 
   module.exports.notifications = async (req, res) => {
