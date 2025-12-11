@@ -18,13 +18,13 @@ env.config()
 //     res.status(200).json({ message: "Welcome to Userlaundry" })
 // }
 
-module.exports.createpost = async(req, res)=>{
-    try {
+module.exports.createpost = async (req, res) => {
+  try {
     const job = new jobPost(req.body);
     await job.save();
 
     console.log(job, "jobsssssss");
-    
+
 
     res.status(201).json({
       message: "Job posted successfully!",
@@ -49,8 +49,8 @@ module.exports.getcreatepost = async (req, res) => {
   }
 };
 
-module.exports.getuserpost = async(req, res)=>{
-   try {
+module.exports.getuserpost = async (req, res) => {
+  try {
     const { id } = req.params;
 
     const jobs = await jobPost.find({ userId: id }).sort({ createdAt: -1 });
@@ -70,8 +70,8 @@ module.exports.getuserpost = async(req, res)=>{
 }
 
 
-module.exports.getsingleuserpost = async(req, res)=>{
-   try {
+module.exports.getsingleuserpost = async (req, res) => {
+  try {
     const job = await jobPost.findById(req.params.id);
 
     if (!job) {
@@ -98,7 +98,7 @@ module.exports.getsingleuserpost = async(req, res)=>{
 
 
 module.exports.delectuserpost = async (req, res) => {
- const jobId = req.params.id;
+  const jobId = req.params.id;
   try {
     const deletedJob = await jobPost.findByIdAndDelete(jobId);
     if (!deletedJob) return res.status(404).json({ message: "Job not found" });
@@ -110,6 +110,40 @@ module.exports.delectuserpost = async (req, res) => {
 }
 
 
-module.exports.userapplyjob = async(req, res)=>{
-  
-}
+
+
+module.exports.userapplyjob = async (req, res) => {
+  try {
+    const { jobId, userId } = req.body;
+
+    if (!jobId || !userId) {
+      return res.status(400).json({ message: "Job ID and User ID are required." });
+    }
+
+    const job = await jobPost.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found." });
+    }
+
+    if (job.userId.toString() === userId) {
+      return res.status(400).json({ message: "You cannot apply for your own job." });
+    }
+
+    if (job.status !== "Pending") {
+      return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
+    }
+
+    job.status = "Applied";
+    job.applicant = userId;
+    console.log(job, "applied job");
+    console.log(job.applicant, "applicant job");
+
+    await job.save();
+
+    return res.status(200).json({ message: "You have successfully applied for this job.", job });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};

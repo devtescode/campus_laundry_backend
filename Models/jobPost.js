@@ -2,11 +2,7 @@ import mongoose from "mongoose";
 
 const JobPostSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "userlaundry",
-      required: true,
-    },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "userlaundry", required: true },
     type: String,
     quantity: Number,
     price: Number,
@@ -19,11 +15,8 @@ const JobPostSchema = new mongoose.Schema(
     deliveryTime: String,
     description: String,
     image: String, // Cloudinary URL if uploading
-    status: {
-      type: String,
-      enum: ["Pending", "Applied", "In Progress", "Completed"],
-      default: "Pending",
-    },
+    status: { type: String, enum: ["Pending", "Applied", "In Progress", "Completed"], default: "Pending" },
+    applicant: { type: mongoose.Schema.Types.ObjectId, ref: "userlaundry" }, // the washer applying
   },
   { timestamps: true }
 );
