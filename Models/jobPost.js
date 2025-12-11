@@ -21,7 +21,7 @@ const JobPostSchema = new mongoose.Schema(
     image: String, // Cloudinary URL if uploading
     status: {
       type: String,
-      enum: ["Pending", "In Progress", "Completed"],
+      enum: ["Pending", "Applied", "In Progress", "Completed"],
       default: "Pending",
     },
   },

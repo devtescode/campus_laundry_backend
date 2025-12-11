@@ -1,6 +1,6 @@
 const express = require("express")
 const { userwelcome, signup, verifyEmail, login, resendVerification } = require("../Controllers/user.controllers")
-const { createpost, getcreatepost, getuserpost, getsingleuserpost } = require("../Controllers/userpost")
+const { createpost, getcreatepost, getuserpost, getsingleuserpost, delectuserpost, userapplyjob } = require("../Controllers/userpost")
 const router = express.Router()
 
 
@@ -13,5 +13,7 @@ router.post("/createpost", createpost)
 router.get("/getcreatepost", getcreatepost)
 router.get("/getuserpost/:id", getuserpost)
 router.get("/getsingleuserpost/:id", getsingleuserpost)
+router.delete("/delectuserpost/:id", delectuserpost)
+router.post("/userapplyjob", userapplyjob)
 
 module.exports = router
