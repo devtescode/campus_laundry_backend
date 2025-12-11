@@ -239,22 +239,14 @@ module.exports.userapplyjob = async (req, res) => {
     if (!applicant) {
       return res.status(404).json({ message: "Applicant not found." });
     }
-
     const applicantName = applicant.fullname;
-
-    // Update the job with applicant info
     job.status = "Applied";
-    job.applicant = userId;        // store applicant ID
-    job.applicantName = applicantName; // store applicant name for frontend display
+    job.applicant = userId;        
+    job.applicantName = applicantName; 
     await job.save();
-
-    console.log(applicantName, "Applican name");
-    
-
-    // Create notification for the poster
     const message = `${applicantName} applied for your ${job.type} job!`;
     await Notification.create({
-      userId: job.userId, // the poster
+      userId: job.userId, 
       message,
       unread: true
     });
