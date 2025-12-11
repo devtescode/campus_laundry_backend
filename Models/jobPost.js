@@ -19,6 +19,11 @@ const JobPostSchema = new mongoose.Schema(
     deliveryTime: String,
     description: String,
     image: String, // Cloudinary URL if uploading
+    status: {
+      type: String,
+      enum: ["Pending", "In Progress", "Completed"],
+      default: "Pending",
+    },
   },
   { timestamps: true }
 );

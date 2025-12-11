@@ -48,3 +48,50 @@ module.exports.getcreatepost = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+module.exports.getuserpost = async(req, res)=>{
+   try {
+    const { id } = req.params;
+
+    const jobs = await jobPost.find({ userId: id }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+    });
+
+  } catch (error) {
+    console.log("Error fetching user jobs:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+}
+
+
+module.exports.getsingleuserpost = async(req, res)=>{
+   try {
+    const job = await jobPost.findById(req.params.id);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      job,
+    });
+
+  } catch (err) {
+    console.log("Error fetching job:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+
+}
