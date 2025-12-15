@@ -334,3 +334,22 @@ module.exports.completejob = async (req, res) => {
     });
   }
 };
+
+
+module.exports.getWasherHistory = async (req, res) => {
+  try {
+    const { washerId } = req.params;
+
+    const jobs = await jobPost.find({
+      applicant: washerId,
+      status: "Completed",
+    })
+      .populate("userId", "fullname")
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching history" });
+  }
+};
+

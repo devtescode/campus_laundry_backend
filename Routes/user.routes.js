@@ -1,6 +1,6 @@
 const express = require("express")
 const { userwelcome, signup, verifyEmail, login, resendVerification } = require("../Controllers/user.controllers")
-const { createpost, getcreatepost, getuserpost, getsingleuserpost, delectuserpost, userapplyjob, notifications, getWasherJobs, completejob } = require("../Controllers/userpost")
+const { createpost, getcreatepost, getuserpost, getsingleuserpost, delectuserpost, userapplyjob, notifications, getWasherJobs, completejob, getWasherHistory } = require("../Controllers/userpost")
 const router = express.Router()
 
 
@@ -18,5 +18,6 @@ router.post("/userapplyjob", userapplyjob)
 router.get("/notifications/:userId", notifications)
 router.get("/getWasherJobs/:washerId", getWasherJobs)
 router.patch("/completejob/:jobId", completejob)
+router.get("/getWasherHistory/:washerId", getWasherHistory) // Reusing getWasherJobs for history as well
 
 module.exports = router
