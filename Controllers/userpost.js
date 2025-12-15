@@ -275,3 +275,62 @@ module.exports.userapplyjob = async (req, res) => {
       res.status(500).json({ message: "Server error", error: err.message });
     }
   }
+
+
+// GET jobs applied by washer
+module.exports.getWasherJobs = async (req, res) => {
+  try {
+    const { washerId } = req.params;
+
+    const jobs = await jobPost.find({
+      applicant: washerId
+    })
+      .populate("userId", "fullname phonenumber") // job poster info
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(jobs);
+    console.log(jobs, "washer jobs");
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch washer jobs",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports.completejob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { washerId } = req.body;
+
+    const job = await jobPost.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Only the washer who applied can complete
+    if (job.applicant?.toString() !== washerId) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // Cannot complete twice
+    if (job.status === "Completed") {
+      return res.status(400).json({ message: "Job already completed" });
+    }
+
+    job.status = "Completed";
+    await job.save();
+
+    return res.status(200).json({
+      message: "Job marked as completed successfully",
+      job,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to complete job",
+      error: error.message,
+    });
+  }
+};
