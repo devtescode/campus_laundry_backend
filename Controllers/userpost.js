@@ -218,23 +218,19 @@ module.exports.userapplyjob = async (req, res) => {
       return res.status(400).json({ message: "Job ID and User ID are required." });
     }
 
-    // Find the job
     const job = await jobPost.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: "Job not found." });
     }
 
-    // Prevent poster from applying
     if (job.userId.toString() === userId) {
       return res.status(400).json({ message: "You cannot apply for your own job." });
     }
 
-    // Job must be pending
     if (job.status !== "Pending") {
       return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
     }
 
-    // Get applicant details
     const applicant = await Userschema.findById(userId);
     if (!applicant) {
       return res.status(404).json({ message: "Applicant not found." });
@@ -277,7 +273,6 @@ module.exports.userapplyjob = async (req, res) => {
   }
 
 
-// GET jobs applied by washer
 module.exports.getWasherJobs = async (req, res) => {
   try {
     const { washerId } = req.params;
@@ -285,7 +280,7 @@ module.exports.getWasherJobs = async (req, res) => {
     const jobs = await jobPost.find({
       applicant: washerId
     })
-      .populate("userId", "fullname phonenumber") // job poster info
+      .populate("userId", "fullname phonenumber") 
       .sort({ createdAt: -1 });
 
     res.status(200).json(jobs);
@@ -310,12 +305,10 @@ module.exports.completejob = async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    // Only the washer who applied can complete
     if (job.applicant?.toString() !== washerId) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    // Cannot complete twice
     if (job.status === "Completed") {
       return res.status(400).json({ message: "Job already completed" });
     }
