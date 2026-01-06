@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer");
 const { Userschema } = require("../Models/user.models");
 const { default: jobPost } = require("../Models/jobPost")
 const { default: Notification } = require("../Models/Notification")
+const messageSchema = require("../Models/messageSchema")
 // const ADMIN_SECRET_KEY = process.env.JWT_SECRET_KEY
 const cloudinary = require('cloudinary').v2;
 env.config()
@@ -153,60 +154,60 @@ module.exports.delectuserpost = async (req, res) => {
 // import User from "../models/userlaundry.js";
 // import Notification from "../models/Notification.js";
 
-  // module.exports.userapplyjob = async (req, res) => {
-  //   try {
-  //     const { jobId, userId } = req.body;
+// module.exports.userapplyjob = async (req, res) => {
+//   try {
+//     const { jobId, userId } = req.body;
 
-  //     if (!jobId || !userId) {
-  //       return res.status(400).json({ message: "Job ID and User ID are required." });
-  //     }
+//     if (!jobId || !userId) {
+//       return res.status(400).json({ message: "Job ID and User ID are required." });
+//     }
 
-  //     const job = await jobPost.findById(jobId);
+//     const job = await jobPost.findById(jobId);
 
-  //     if (!job) {
-  //       return res.status(404).json({ message: "Job not found." });
-  //     }
+//     if (!job) {
+//       return res.status(404).json({ message: "Job not found." });
+//     }
 
-  //     // Prevent applying to own job
-  //     if (job.userId.toString() === userId) {
-  //       return res.status(400).json({ message: "You cannot apply for your own job." });
-  //     }
+//     // Prevent applying to own job
+//     if (job.userId.toString() === userId) {
+//       return res.status(400).json({ message: "You cannot apply for your own job." });
+//     }
 
-  //     // Job must be pending
-  //     if (job.status !== "Pending") {
-  //       return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
-  //     }
+//     // Job must be pending
+//     if (job.status !== "Pending") {
+//       return res.status(400).json({ message: `Job already ${job.status.toLowerCase()}.` });
+//     }
 
-  //     // Update the job
-  //     job.status = "Applied";
-  //     job.applicant = userId;
-  //     await job.save();
+//     // Update the job
+//     job.status = "Applied";
+//     job.applicant = userId;
+//     await job.save();
 
-  //     // Get applicant details
-  //     const applicant = await Userschema.findById(userId);
-  //     const applicantName = applicant.fullname;
+//     // Get applicant details
+//     const applicant = await Userschema.findById(userId);
+//     const applicantName = applicant.fullname;
 
-  //     console.log(job, "applied job");
+//     console.log(job, "applied job");
 
-  //     // Create notification for job owner
-  //     const message = `${applicantName} applied for your ${job.type} job!`;
+//     // Create notification for job owner
+//     const message = `${applicantName} applied for your ${job.type} job!`;
 
-  //     console.log(message, "notification message");
-  //     await Notification.create({
-  //       userId: job.userId,
-  //       message,
-  //       unread: true
-  //     });
+//     console.log(message, "notification message");
+//     await Notification.create({
+//       userId: job.userId,
+//       message,
+//       unread: true
+//     });
 
-  //     return res.status(200).json({
-  //       message: "You have successfully applied for this job.",
-  //       job,
-  //     });
-  //   } catch (error) {
-  //     console.error(error);
-  //     return res.status(500).json({ message: "Server error.", error: error.message });
-  //   }
-  // };
+//     return res.status(200).json({
+//       message: "You have successfully applied for this job.",
+//       job,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: "Server error.", error: error.message });
+//   }
+// };
 
 
 
@@ -237,12 +238,12 @@ module.exports.userapplyjob = async (req, res) => {
     }
     const applicantName = applicant.fullname;
     job.status = "Applied";
-    job.applicant = userId;        
-    job.applicantName = applicantName; 
+    job.applicant = userId;
+    job.applicantName = applicantName;
     await job.save();
     const message = `${applicantName} applied for your ${job.type} job!`;
     await Notification.create({
-      userId: job.userId, 
+      userId: job.userId,
       message,
       unread: true
     });
@@ -260,17 +261,17 @@ module.exports.userapplyjob = async (req, res) => {
 
 
 
-  module.exports.notifications = async (req, res) => {
-    try {
-      const notifications = await Notification.find({ userId: req.params.userId })
-        .sort({ createdAt: -1 });
-        console.log(notifications, "notifications");
+module.exports.notifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 });
+    console.log(notifications, "notifications");
 
-      res.status(200).json(notifications);
-    } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
-    }
+    res.status(200).json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
+}
 
 
 module.exports.getWasherJobs = async (req, res) => {
@@ -280,7 +281,7 @@ module.exports.getWasherJobs = async (req, res) => {
     const jobs = await jobPost.find({
       applicant: washerId
     })
-      .populate("userId", "fullname phonenumber") 
+      .populate("userId", "fullname phonenumber")
       .sort({ createdAt: -1 });
 
     res.status(200).json(jobs);
@@ -346,3 +347,61 @@ module.exports.getWasherHistory = async (req, res) => {
   }
 };
 
+
+
+module.exports.getMessages = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const userId = req.user.id;
+
+    const job = await jobPost.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // 🔐 Allow only poster or applicant
+    if (
+      job.userId.toString() !== userId &&
+      job.applicant?.toString() !== userId
+    ) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const messages = await messageSchema.find({ jobId })
+      .populate("sender", "fullname")
+      .sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+
+
+module.exports.   sendMessage = async (req, res) => {
+ try {
+    const { jobId, senderId, receiverId, text } = req.body;
+
+    if (!jobId || !senderId || !receiverId || !text) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
+    }
+
+    const message = await messageSchema.create({
+      jobId,
+      sender: senderId,
+      receiver: receiverId,
+      text,
+    });
+
+    console.log(message, "new message");
+
+    res.status(201).json(message);
+  } catch (error) {
+    console.error("SEND MESSAGE ERROR:", error);
+    res.status(500).json({
+      message: "Failed to send message",
+      error: error.message,
+    });
+  }
+}
