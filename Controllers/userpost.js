@@ -378,7 +378,7 @@ module.exports.getMessages = async (req, res) => {
 
 
 module.exports.sendMessage = async (req, res) => {
- try {
+  try {
     const { jobId, senderId, receiverId, text } = req.body;
 
     if (!jobId || !senderId || !receiverId || !text) {
@@ -405,3 +405,48 @@ module.exports.sendMessage = async (req, res) => {
     });
   }
 }
+
+
+module.exports.washerstats = async (req, res) => {
+  try {
+    const washerId = req.user.id;
+
+    // Fetch all jobs applied by washer
+    const washerJobs = await jobPost.find({ applicant: washerId });
+
+    // Count jobs
+    const jobsAccepted = washerJobs.length;
+    const completedJobs = washerJobs.filter(job => job.status === "Completed").length;
+    const appliedJobs = washerJobs.filter(job => job.status !== "Completed").length;
+
+    // Total price of all applied/pending jobs (current active jobs)
+    const currentJobsTotalPrice = washerJobs
+      .filter(job => job.status !== "Completed")
+      .reduce((sum, job) => sum + (job.price || 0), 0);
+
+    // Total earnings from completed jobs
+    const completedEarnings = washerJobs
+      .filter(job => job.status === "Completed")
+      .reduce((sum, job) => sum + (job.price || 0), 0);
+
+    // Optional: list of jobs with prices and status
+    const jobPrices = washerJobs.map(job => ({
+      jobId: job._id,
+      price: job.price,
+      status: job.status,
+    }));
+
+    res.json({
+      jobsAccepted,
+      completedJobs,
+      appliedJobs,           // current applied/pending jobs
+      currentJobsTotalPrice, // price of current jobs
+      completedEarnings,     // real earnings from completed jobs
+      jobPrices,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to load washer stats" });
+  }
+};
+
