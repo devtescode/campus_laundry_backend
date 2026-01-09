@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const cors = require('cors');
 const userRoutes = require('./Routes/user.routes');
-// const AdminRoutes = require('./Routes/admin');
+const AdminRoutes = require('./Routes/admin.routes');
 // const Payment = require('./Routes/payments')
 // const paystackroute = require('./Controllers/paystackWebhook');
 
@@ -31,7 +31,7 @@ mongoose
 
 
 app.use('/userlaundry', userRoutes);
-// app.use('/admin', AdminRoutes);
+app.use('/admin', AdminRoutes);
 // app.use("/payments", Payment)
 
 
