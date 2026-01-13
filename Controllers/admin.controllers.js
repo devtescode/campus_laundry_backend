@@ -66,7 +66,6 @@ module.exports.adminLogin = async (req, res) => {
       process.env.JWT_SECRET_ADMIN,
       { expiresIn: "1hr" }
     );
-    // console.log(token, "admintoken");
     
 
     res.json({
