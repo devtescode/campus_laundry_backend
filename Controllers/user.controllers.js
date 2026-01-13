@@ -134,7 +134,6 @@ module.exports.verifyEmail = async (req, res) => {
             return res.status(400).json({ msg: "Invalid or expired token" });
         }
 
-        // Mark verified
         user.isVerified = true;
         user.emailToken = null;
         await user.save();
