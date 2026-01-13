@@ -127,7 +127,7 @@ module.exports.login = async (req, res) => {
 
 module.exports.verifyEmail = async (req, res) => {
     try {
-        const { token } = req.params; // ✅ get token from URL path
+        const { token } = req.params;
 
         const user = await Userschema.findOne({ emailToken: token });
         if (!user) {
