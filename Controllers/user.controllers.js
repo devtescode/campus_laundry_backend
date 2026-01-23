@@ -147,7 +147,6 @@ module.exports.verifyEmail = async (req, res) => {
 
 
 
-
 module.exports.resendVerification = async (req, res) => {
     try {
         const { email } = req.body;
