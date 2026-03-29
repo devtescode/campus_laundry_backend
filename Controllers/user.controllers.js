@@ -160,7 +160,6 @@ module.exports.resendVerification = async (req, res) => {
         user.emailToken = emailToken;
         await user.save();
 
-        // Send email
 
         // const url = `${frontendUrl}/verify-email/${emailToken}`;
 
