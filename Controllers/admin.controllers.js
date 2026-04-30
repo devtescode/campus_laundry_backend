@@ -2,7 +2,8 @@ const Admin = require("../Models/Admin");
 const bcrypt = require("bcryptjs")
 const env = require("dotenv")
 env.config()
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const { Userschema } = require("../Models/user.models");
 
 module.exports.checkAdminExists = async (req, res) => {
   try {
@@ -81,4 +82,10 @@ module.exports.adminLogin = async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 };
+
+
+module.exports.getAllUsers = async (req, res) => {
+  const users = await Userschema.find();
+  res.json({ users });
+}
 
