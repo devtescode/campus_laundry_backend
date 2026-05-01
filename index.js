@@ -1,7 +1,8 @@
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
-require('dotenv').config();
+// require('dotenv').config();
+require("dotenv").config({ path: "./.env" });
 const cors = require('cors');
 const userRoutes = require('./Routes/user.routes');
 const AdminRoutes = require('./Routes/admin.routes');
@@ -13,21 +14,35 @@ const AdminRoutes = require('./Routes/admin.routes');
 
 const app = express();
 const server = http.createServer(app); // Create the server instance
-const PORT = process.env.PORT || 5000;
-const URI = process.env.URI;
+const PORT = process.env.PORT;
+const URI = process.env.MONGO_URI;
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true, limit: '200mb' }));
 app.use(express.json({ limit: '200mb' }));
 
+// mongoose
+//     .connect(URI)
+//     .then(() => {
+//         console.log('Database connected successfully User Laundry');
+//     })
+//     .catch((err) => {
+//         console.error('Database connection error:', err);
+// });
+console.log("MONGO_URI =", process.env.MONGO_URI);
+if (!URI) {
+  console.error("❌ MongoDB URI is missing in .env");
+  process.exit(1);
+}
+
 mongoose
-    .connect(URI)
-    .then(() => {
-        console.log('Database connected successfully User Laundry');
-    })
-    .catch((err) => {
-        console.error('Database connection error:', err);
-});
+  .connect(URI)
+  .then(() => {
+    console.log("✅ Database connected successfully User Laundry");
+  })
+  .catch((err) => {
+    console.error("❌ Database connection error:", err.message);
+  });
 
 
 app.use('/userlaundry', userRoutes);

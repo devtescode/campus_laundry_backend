@@ -4,6 +4,7 @@ const env = require("dotenv")
 env.config()
 const jwt = require("jsonwebtoken");
 const { Userschema } = require("../Models/user.models");
+const { default: jobPost } = require("../Models/jobPost");
 
 module.exports.checkAdminExists = async (req, res) => {
   try {
@@ -84,8 +85,63 @@ module.exports.adminLogin = async (req, res) => {
 };
 
 
+// module.exports.getAllUsers = async (req, res) => {
+//   const users = await Userschema.find();
+//   res.json({ users });
+// }
 module.exports.getAllUsers = async (req, res) => {
-  const users = await Userschema.find();
-  res.json({ users });
-}
+  try {
+    const users = await Userschema.find().lean();
+
+    const usersWithStats = await Promise.all(
+      users.map(async (user) => {
+        // 🧺 Jobs posted (Poster)
+        const jobsPostedCount = await jobPost.countDocuments({
+          userId: user._id,
+        });
+
+        // 🧼 Jobs where user applied as washer (REAL APPLIED)
+        const washerAppliedCount = await jobPost.countDocuments({
+          applicant: user._id,
+          status: "Applied",
+        });
+
+        // 🧼 Jobs actually accepted/working/completed (REAL WORK DONE)
+        const washerAcceptedCount = await jobPost.countDocuments({
+          applicant: user._id,
+          status: { $in: ["In Progress", "Completed"] },
+        });
+
+        // 📌 ROLE LOGIC (BASED ON REAL DATA)
+        let role = "New User";
+
+        if (jobsPostedCount > 0 && washerAcceptedCount > 0) {
+          role = "Both";
+        } else if (jobsPostedCount > 0) {
+          role = "Poster";
+        } else if (washerAcceptedCount > 0 || washerAppliedCount > 0) {
+          role = "Washer";
+        }
+
+        return {
+          ...user,
+
+          // 📊 STATS
+          jobs: jobsPostedCount,              // poster jobs
+          washerApplied: washerAppliedCount,  // applied jobs
+          jobsWashed: washerAcceptedCount,    // accepted/completed jobs
+
+          // 🎯 ROLE
+          role,
+        };
+      })
+    );
+
+    res.json({ users: usersWithStats });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
