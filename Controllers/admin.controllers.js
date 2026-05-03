@@ -184,7 +184,6 @@ try {
           }
         : null,
 
-      // 🧼 WASHER (FULL DETAILS)
       applicant: job.applicant
         ? {
             _id: job.applicant._id,
