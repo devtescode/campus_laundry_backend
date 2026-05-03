@@ -129,7 +129,7 @@ module.exports.getAllUsers = async (req, res) => {
           // 📊 STATS
           jobs: jobsPostedCount,              // poster jobs
           washerApplied: washerAppliedCount,  // applied jobs
-          jobsWashed: washerAcceptedCount,    // accepted/completed jobs
+          jobsWashed: washerAcceptedCount,    
 
           // 🎯 ROLE
           role,
@@ -144,4 +144,70 @@ module.exports.getAllUsers = async (req, res) => {
   }
 };
 
+
+module.exports.getAllJobsdetails  = async (req, res) => {
+try {
+    const jobs = await jobPost.find()
+      .populate("userId", "fullname email phonenumber")
+      .populate("applicant", "fullname email phonenumber")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedJobs = jobs.map((job) => ({
+      _id: job._id,
+
+      // 🧺 JOB INFO
+      type: job.type,
+      quantity: job.quantity,
+      price: job.price,
+      status: job.status,
+      description: job.description,
+
+      // 📍 LOCATION INFO
+      hostel: job.hostel,
+      block: job.block,
+      room: job.room,
+
+      // 📅 TIMING
+      pickupDate: job.pickupDate,
+      pickupTime: job.pickupTime,
+      deliveryDate: job.deliveryDate,
+      deliveryTime: job.deliveryTime,
+
+      // 👤 POSTER (FULL DETAILS)
+      userId: job.userId
+        ? {
+            _id: job.userId._id,
+            fullname: job.userId.fullname,
+            email: job.userId.email,
+            phone: job.userId.phonenumber,
+          }
+        : null,
+
+      // 🧼 WASHER (FULL DETAILS)
+      applicant: job.applicant
+        ? {
+            _id: job.applicant._id,
+            fullname: job.applicant.fullname,
+            email: job.applicant.email,
+            phone: job.applicant.phonenumber,
+          }
+        : null,
+
+      applicantName: job.applicantName || null,
+
+      createdAt: job.createdAt,
+    }));
+
+    res.json({
+      success: true,
+      count: formattedJobs.length,
+      jobs: formattedJobs,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching jobs:", err);
+    res.status(500).json({ message: err.message });
+  }
+
+}
 
