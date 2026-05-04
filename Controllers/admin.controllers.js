@@ -5,6 +5,7 @@ env.config()
 const jwt = require("jsonwebtoken");
 const { Userschema } = require("../Models/user.models");
 const { default: jobPost } = require("../Models/jobPost");
+const messageSchema = require("../Models/messageSchema");
 
 module.exports.checkAdminExists = async (req, res) => {
   try {
@@ -210,3 +211,40 @@ try {
 
 }
 
+
+module.exports.getAllChats = async (req, res) => {
+  try {
+    const messages = await messageSchema.find()
+      .populate("sender", "fullname email")
+      .populate("receiver", "fullname email")
+      .populate({
+        path: "jobId",
+        populate: [
+          { path: "userId", select: "fullname" }, // poster
+          { path: "applicant", select: "fullname" }, // washer
+        ],
+      })
+      .sort({ createdAt: 1 });
+
+    // group by job
+    const chats = {};
+
+    messages.forEach((msg) => {
+      const jobId = msg.jobId?._id;
+
+      if (!chats[jobId]) {
+        chats[jobId] = {
+          job: msg.jobId,
+          messages: [],
+        };
+      }
+
+      chats[jobId].messages.push(msg);
+    });
+
+    res.json({ chats: Object.values(chats) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+}

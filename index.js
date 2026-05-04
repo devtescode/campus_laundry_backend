@@ -29,7 +29,7 @@ app.use(express.json({ limit: '200mb' }));
 //     .catch((err) => {
 //         console.error('Database connection error:', err);
 // });
-console.log("MONGO_URI =", process.env.MONGO_URI);
+// console.log("MONGO_URI  =", process.env.MONGO_URI);
 if (!URI) {
   console.error("❌ MongoDB URI is missing in .env");
   process.exit(1);
