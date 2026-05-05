@@ -1,5 +1,5 @@
 const express = require("express");
-const { checkAdminExists, adminLogin, adminSignup, getAllUsers, getAllJobsdetails, getAllChats } = require("../Controllers/admin.controllers");
+const { checkAdminExists, adminLogin, adminSignup, getAllUsers, getAllJobsdetails, getAllChats, getRecentActivity } = require("../Controllers/admin.controllers");
 
 const router = express.Router()
 
@@ -10,5 +10,6 @@ router.post("/signup", adminSignup)
 router.get("/getallusers", getAllUsers)
 router.get("/getalljobsdetails", getAllJobsdetails)
 router.get("/getallchats", getAllChats)
+router.get("/recentactivity", getRecentActivity)
 
 module.exports = router

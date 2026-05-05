@@ -40,17 +40,13 @@ module.exports.adminSignup = async (req, res) => {
       password: hashedPassword,
     });
 
-    res.status(201).json({ message: "Admin created successfully", admin });
-    console.log(admin, "admin signup");
-    
+    res.status(201).json({ message: "Admin created successfully", admin });    
   } catch (err) {
     res.status(500).json({ message: "Admin signup failed" });
   }
 };
 
-module.exports.adminLogin = async (req, res) => {
-    console.log(req.body);
-    
+module.exports.adminLogin = async (req, res) => {    
   try {
     const { email, password } = req.body;
 
@@ -220,8 +216,8 @@ module.exports.getAllChats = async (req, res) => {
       .populate({
         path: "jobId",
         populate: [
-          { path: "userId", select: "fullname" }, // poster
-          { path: "applicant", select: "fullname" }, // washer
+          { path: "userId", select: "fullname" }, 
+          { path: "applicant", select: "fullname" }, 
         ],
       })
       .sort({ createdAt: 1 });
@@ -248,3 +244,68 @@ module.exports.getAllChats = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 }
+
+
+module.exports.getRecentActivity = async (req, res) => {
+  try {
+    // 🆕 Latest Users
+    const users = await Userschema.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // 🧺 Latest Jobs (Posters)
+    const jobs = await jobPost.find()
+      .populate("userId", "fullname")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // 🧼 Washer Activity (Accepted jobs)
+    const washers = await jobPost.find({
+      applicant: { $ne: null },
+    })
+      .populate("applicant", "fullname")
+      .populate("userId", "fullname")
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    // 🔥 Combine all into one activity array
+    const activity = [
+      // USERS
+      ...users.map((user) => ({
+        id: user._id,
+        type: "user",
+        action: "New user registered",
+        user: user.fullname,
+        time: user.createdAt,
+      })),
+
+      // JOB POSTERS
+      ...jobs.map((job) => ({
+        id: job._id,
+        type: "job",
+        action: "New job posted",
+        user: job.userId?.fullname,
+        time: job.createdAt,
+      })),
+
+      // WASHERS
+      ...washers.map((job) => ({
+        id: job._id + "_washer",
+        type: "washer",
+        action: "Washer accepted a job",
+        user: job.applicant?.fullname,
+        time: job.updatedAt,
+      })),
+    ];
+
+    // 🔥 Sort everything by time (latest first)
+    const sortedActivity = activity.sort(
+      (a, b) => new Date(b.time) - new Date(a.time)
+    );
+
+    res.json({ activity: sortedActivity.slice(0, 5) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
