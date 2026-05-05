@@ -314,18 +314,12 @@ module.exports.getRecentActivity = async (req, res) => {
 
 module.exports.getDashboardStats = async (req, res) => {
   try {
-    // 👥 Total users
     const totalUsers = await Userschema.countDocuments();
-
-    // 🧺 Total jobs
     const totalJobs = await jobPost.countDocuments();
-
-    // 🔥 Active jobs
     const activeJobs = await jobPost.countDocuments({
       status: { $in: ["Pending", "In Progress"] },
     });
 
-    // 💰 Revenue (sum of ALL job prices)
     const revenueData = await jobPost.aggregate([
       {
         $group: {
@@ -337,7 +331,6 @@ module.exports.getDashboardStats = async (req, res) => {
 
     const totalRevenue = revenueData[0]?.totalRevenue || 0;
 
-    // ⚠️ Reported jobs (example: disputed)
     const reportedPosts = await jobPost.countDocuments({
       status: "Disputed",
     });
@@ -349,8 +342,7 @@ module.exports.getDashboardStats = async (req, res) => {
       totalRevenue,
       reportedPosts,
 
-      // optional
-      monthlyGrowth: 12.5, // you can calculate later
+      monthlyGrowth: 12.5,
     });
   } catch (err) {
     console.error(err);
