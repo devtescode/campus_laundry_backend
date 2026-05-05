@@ -309,3 +309,51 @@ module.exports.getRecentActivity = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
+module.exports.getDashboardStats = async (req, res) => {
+  try {
+    // 👥 Total users
+    const totalUsers = await Userschema.countDocuments();
+
+    // 🧺 Total jobs
+    const totalJobs = await jobPost.countDocuments();
+
+    // 🔥 Active jobs
+    const activeJobs = await jobPost.countDocuments({
+      status: { $in: ["Pending", "In Progress"] },
+    });
+
+    // 💰 Revenue (sum of ALL job prices)
+    const revenueData = await jobPost.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$price" },
+        },
+      },
+    ]);
+
+    const totalRevenue = revenueData[0]?.totalRevenue || 0;
+
+    // ⚠️ Reported jobs (example: disputed)
+    const reportedPosts = await jobPost.countDocuments({
+      status: "Disputed",
+    });
+
+    res.json({
+      totalUsers,
+      totalJobs,
+      activeJobs,
+      totalRevenue,
+      reportedPosts,
+
+      // optional
+      monthlyGrowth: 12.5, // you can calculate later
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
