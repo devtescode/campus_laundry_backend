@@ -298,7 +298,6 @@ module.exports.getRecentActivity = async (req, res) => {
       })),
     ];
 
-    // 🔥 Sort everything by time (latest first)
     const sortedActivity = activity.sort(
       (a, b) => new Date(b.time) - new Date(a.time)
     );
@@ -309,8 +308,6 @@ module.exports.getRecentActivity = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 module.exports.getDashboardStats = async (req, res) => {
   try {
