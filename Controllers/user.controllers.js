@@ -7,6 +7,7 @@ const { default: axios } = require("axios")
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { Userschema } = require("../Models/user.models");
+const { default: jobPost } = require("../Models/jobPost")
 // const ADMIN_SECRET_KEY = process.env.JWT_SECRET_KEY
 const cloudinary = require('cloudinary').v2;
 env.config()
@@ -194,4 +195,64 @@ module.exports.resendVerification = async (req, res) => {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
+};
+
+
+module.exports.getPosterStats = async (req, res) => {
+    console.log(req.body);
+    console.log("Hitssssssssssss");
+    
+    
+  try {
+    const userId = req.params.userId;
+
+    // 🧺 Jobs posted by this user
+    const jobsPosted = await jobPost.countDocuments({
+      userId,
+    });
+
+    // ⏳ Pending jobs
+    const pendingJobs = await jobPost.countDocuments({
+      userId,
+      status: "Pending",
+    });
+
+    // ✅ Completed jobs
+    const completedJobs = await jobPost.countDocuments({
+      userId,
+      status: "Completed",
+    });
+
+    // 💰 Total spent (ONLY completed jobs)
+    const totalSpentData = await jobPost.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          status: "Completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$price" },
+        },
+      },
+    ]);
+
+    const totalSpent = totalSpentData[0]?.total || 0;
+
+    // ⭐ Replace rating with pending count (your requirement)
+    const averageRating = pendingJobs;
+
+    res.json({
+      jobsPosted,
+      pendingJobs,
+      completedJobs,
+      totalSpent,
+      averageRating,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 };

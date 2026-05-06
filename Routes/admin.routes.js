@@ -13,4 +13,5 @@ router.get("/getallchats", getAllChats)
 router.get("/recentactivity", getRecentActivity)
 router.get("/dashboardstats", getDashboardStats)
 
+
 module.exports = router
