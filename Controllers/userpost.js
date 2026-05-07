@@ -41,8 +41,10 @@ module.exports.createpost = async (req, res) => {
 module.exports.getcreatepost = async (req, res) => {
   try {
     const jobs = await jobPost
-      .find()
-      .populate("userId", "fullname") // 👈 pull full name only
+      .find({
+        status: {$ne: "Completed"}
+      })
+      .populate("userId", "fullname gender") // 👈 pull full name only
       .sort({ createdAt: -1 });
 
     res.json(jobs);

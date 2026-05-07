@@ -115,6 +115,7 @@ module.exports.login = async (req, res) => {
                 email: user.email,
                 phonenumber: user.phonenumber,
                 gender: user.gender,
+                applicant: user.applicant,
                 token
             }
             
@@ -200,11 +201,7 @@ module.exports.resendVerification = async (req, res) => {
 };
 
 
-module.exports.getPosterStats = async (req, res) => {
-    console.log(req.body);
-    console.log("Hitssssssssssss");
-    
-    
+module.exports.getPosterStats = async (req, res) => { 
   try {
     const userId = req.params.userId;
 
