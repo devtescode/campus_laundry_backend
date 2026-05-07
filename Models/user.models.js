@@ -52,6 +52,12 @@ let schema = new mongoose.Schema(
       default: "Active"
     },
 
+    gender: {
+      type: String,
+      enum: ["Male", "Female"],
+      required: true
+    },
+
     emailToken: { type: String },
     isVerified: { type: Boolean, default: false }
   },

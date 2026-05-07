@@ -32,7 +32,7 @@ const transporter = nodemailer.createTransport({
 module.exports.signup = async (req, res) => {
     console.log(req.body)
     try {
-        const { fullname, email, phonenumber, password } = req.body;
+        const { fullname, email, phonenumber, password, gender } = req.body;
 
         const existing = await Userschema.findOne({ email });
         if (existing) return res.status(400).json({ msg: "Email already exists" });
@@ -45,7 +45,8 @@ module.exports.signup = async (req, res) => {
             phonenumber,
             password,
             emailToken: token,
-            isVerified: false
+            isVerified: false,
+            gender
         });
         console.log(user);
 
@@ -113,6 +114,7 @@ module.exports.login = async (req, res) => {
                 fullname: user.fullname,
                 email: user.email,
                 phonenumber: user.phonenumber,
+                gender: user.gender,
                 token
             }
             
