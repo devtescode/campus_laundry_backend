@@ -452,3 +452,4 @@ module.exports.washerstats = async (req, res) => {
   }
 };
 
+  
