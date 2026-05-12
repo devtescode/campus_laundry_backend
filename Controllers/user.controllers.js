@@ -258,7 +258,7 @@ module.exports.getPosterStats = async (req, res) => {
 
 module.exports.forgotPassword = async (req, res) => {
     try {
-        const FRONTEND_URL = process.env.FRONTEND_URL// Default to localhost if not set
+        const FRONTEND_URL = process.env.FRONTEND_URL
         const { email } = req.body;
         const user = await Userschema.findOne({ email });
         if (!user) {
@@ -325,36 +325,48 @@ module.exports.forgotPassword = async (req, res) => {
 };
 
 
+
 module.exports.resetPassword = async (req, res) => {
-    try {
-        const { token } = req.params;
-        const { password } = req.body;
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
 
-        const user = await Userschema.findOne({
-            resetPasswordToken: token,
-            resetPasswordExpires: { $gt: Date.now() },
-        });
+    const user = await Userschema.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
 
-        if (!user) {
-            return res.status(400).json({
-                message: "Invalid or expired token",
-            });
-        }
-        user.password = password;
-
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-
-        await user.save();
-
-        res.json({
-            message: "Password reset successful",
-        });
-    } catch (err) {
-        console.log(err);
-
-        res.status(500).json({
-            message: "Server Error",
-        });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid or expired token",
+      });
     }
+
+    // 🔥 CHECK IF NEW PASSWORD IS SAME AS OLD PASSWORD
+    const isSamePassword = await bcrypt.compare(password, user.password);
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: "You cannot use your previous password",
+      });
+    }
+
+    // set new password (will be hashed by pre-save middleware)
+    user.password = password;
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.json({
+      message: "Password reset successful",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
