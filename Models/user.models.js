@@ -59,7 +59,10 @@ let schema = new mongoose.Schema(
     },
 
     emailToken: { type: String },
-    isVerified: { type: Boolean, default: false }
+    isVerified: { type: Boolean, default: false },
+
+    resetPasswordToken:  { type: String },
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );
