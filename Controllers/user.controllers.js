@@ -256,11 +256,7 @@ module.exports.getPosterStats = async (req, res) => {
   }
 };
 
-module.exports.forgotPassword = async (req, res) => {
-    console.log(req.body);
-    console.log("hittttttttt forgetpassword");
-    
-    
+module.exports.forgotPassword = async (req, res) => {    
   try {
     const { email } = req.body;
 
@@ -277,7 +273,7 @@ module.exports.forgotPassword = async (req, res) => {
 
     user.resetPasswordToken = resetToken;
 
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
 
     await user.save();
 
@@ -338,7 +334,6 @@ module.exports.resetPassword = async (req, res) => {
     res.json({
       message: "Password reset successful",
     });
-    console.log("Password reset successful");
   } catch (err) {
     console.log(err);
 
