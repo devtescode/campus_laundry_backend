@@ -322,8 +322,7 @@ module.exports.resetPassword = async (req, res) => {
       });
     }
 
-    // DO NOT HASH HERE
-    // Your schema middleware will hash automatically
+    
     user.password = password;
 
     user.resetPasswordToken = undefined;
