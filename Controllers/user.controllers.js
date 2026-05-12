@@ -277,39 +277,39 @@ module.exports.forgotPassword = async (req, res) => {
             to: email,
             subject: "Password Reset",
             html: `
-       <h2 style="color:#111827;">Reset Your Password</h2>
+            <h2 style="color:#111827;">Reset Your Password</h2>
 
-<p style="color:#4b5563; font-size:14px; line-height:1.6;">
-  We received a request to reset your password. If you made this request, click the button below to set a new password.
-</p>
-
-<div style="margin:20px 0;">
-  <a 
-    href="${resetLink}" 
-    style="
-      display:inline-block;
-      padding:12px 20px;
-      background:#4f46e5;
-      color:#ffffff;
-      text-decoration:none;
-      border-radius:8px;
-      font-weight:600;
-      font-size:14px;
-    "
-  >
-    Reset Password
-  </a>
-</div>
-
-<p style="color:#6b7280; font-size:12px; line-height:1.5;">
-  If you did not request this, you can safely ignore this email. Your password will remain unchanged.
-</p>
-
-<p style="color:#9ca3af; font-size:11px; margin-top:20px;">
-  This link will expire in 10 minutes for security reasons.
-</p>
-      `,
-        });
+                <p style="color:#4b5563; font-size:14px; line-height:1.6;">
+                  We received a request to reset your password. If you made this request, click the button below to set a new password.
+                </p>
+                
+                <div style="margin:20px 0;">
+                  <a 
+                    href="${resetLink}" 
+                    style="
+                      display:inline-block;
+                      padding:12px 20px;
+                      background:#4f46e5;
+                      color:#ffffff;
+                      text-decoration:none;
+                      border-radius:8px;
+                      font-weight:600;
+                      font-size:14px;
+                    "
+                  >
+                    Reset Password
+                  </a>
+                </div>
+                
+                <p style="color:#6b7280; font-size:12px; line-height:1.5;">
+                  If you did not request this, you can safely ignore this email. Your password will remain unchanged.
+                </p>
+                
+                <p style="color:#9ca3af; font-size:11px; margin-top:20px;">
+                  This link will expire in 10 minutes for security reasons.
+                </p>
+            `,
+             });
 
         res.json({
             message: "Password reset link sent to your email",
