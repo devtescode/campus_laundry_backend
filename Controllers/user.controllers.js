@@ -259,25 +259,16 @@ module.exports.getPosterStats = async (req, res) => {
 module.exports.forgotPassword = async (req, res) => {    
   try {
     const { email } = req.body;
-
     const user = await Userschema.findOne({ email });
-
     if (!user) {
       return res.status(404).json({
         message: "User not found",
       });
     }
-
-    // Generate token
     const resetToken = crypto.randomBytes(32).toString("hex");
-
     user.resetPasswordToken = resetToken;
-
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
-
     await user.save();
-
-  
 
     const resetLink = `http://localhost:8080/resetpassword/${resetToken}`;
 
