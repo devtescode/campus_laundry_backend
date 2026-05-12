@@ -340,8 +340,6 @@ module.exports.resetPassword = async (req, res) => {
                 message: "Invalid or expired token",
             });
         }
-
-
         user.password = password;
 
         user.resetPasswordToken = undefined;
