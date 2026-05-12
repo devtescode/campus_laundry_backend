@@ -269,7 +269,6 @@ module.exports.forgotPassword = async (req, res) => {
         user.resetPasswordToken = resetToken;
         user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
         await user.save();
-
         const resetLink = `http://localhost:8080/resetpassword/${resetToken}`;
 
         await transporter.sendMail({
