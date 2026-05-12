@@ -83,7 +83,7 @@ module.exports.signup = async (req, res) => {
 
 
 module.exports.login = async (req, res) => {
- 
+
     try {
         const { email, password } = req.body;
 
@@ -118,11 +118,11 @@ module.exports.login = async (req, res) => {
                 applicant: user.applicant,
                 token
             }
-            
+
         });
         console.log(user, "user");
 
-    } catch (err) { 
+    } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
@@ -171,7 +171,7 @@ module.exports.resendVerification = async (req, res) => {
 
         const url = `${frontendUrl}/verify-email/${emailToken}`; // frontend verification page
         console.log(url);
-        
+
         // await transporter.sendMail({
         //     to: user.email,
         //     subject: "Verify your email",
@@ -201,134 +201,162 @@ module.exports.resendVerification = async (req, res) => {
 };
 
 
-module.exports.getPosterStats = async (req, res) => { 
-  try {
-    const userId = req.params.userId;
+module.exports.getPosterStats = async (req, res) => {
+    try {
+        const userId = req.params.userId;
 
-    // 🧺 Jobs posted by this user
-    const jobsPosted = await jobPost.countDocuments({
-      userId,
-    });
+        // 🧺 Jobs posted by this user
+        const jobsPosted = await jobPost.countDocuments({
+            userId,
+        });
 
-    // ⏳ Pending jobs
-    const pendingJobs = await jobPost.countDocuments({
-      userId,
-      status: "Pending",
-    });
+        // ⏳ Pending jobs
+        const pendingJobs = await jobPost.countDocuments({
+            userId,
+            status: "Pending",
+        });
 
-    // ✅ Completed jobs
-    const completedJobs = await jobPost.countDocuments({
-      userId,
-      status: "Completed",
-    });
+        // ✅ Completed jobs
+        const completedJobs = await jobPost.countDocuments({
+            userId,
+            status: "Completed",
+        });
 
-    // 💰 Total spent (ONLY completed jobs)
-    const totalSpentData = await jobPost.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(userId),
-          status: "Completed",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$price" },
-        },
-      },
-    ]);
+        // 💰 Total spent (ONLY completed jobs)
+        const totalSpentData = await jobPost.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    status: "Completed",
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$price" },
+                },
+            },
+        ]);
 
-    const totalSpent = totalSpentData[0]?.total || 0;
+        const totalSpent = totalSpentData[0]?.total || 0;
 
-    // ⭐ Replace rating with pending count (your requirement)
-    const averageRating = pendingJobs;
+        // ⭐ Replace rating with pending count (your requirement)
+        const averageRating = pendingJobs;
 
-    res.json({
-      jobsPosted,
-      pendingJobs,
-      completedJobs,
-      totalSpent,
-      averageRating,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
-  }
+        res.json({
+            jobsPosted,
+            pendingJobs,
+            completedJobs,
+            totalSpent,
+            averageRating,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
 };
 
-module.exports.forgotPassword = async (req, res) => {    
-  try {
-    const { email } = req.body;
-    const user = await Userschema.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
-    await user.save();
+module.exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await Userschema.findOne({ email });
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
+        await user.save();
 
-    const resetLink = `http://localhost:8080/resetpassword/${resetToken}`;
+        const resetLink = `http://localhost:8080/resetpassword/${resetToken}`;
 
-    await transporter.sendMail({
-      from: process.env.App_Email,
-      to: email,
-      subject: "Password Reset",
-      html: `
-        <h2>Reset Your Password</h2>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetLink}">${resetLink}</a>
+        await transporter.sendMail({
+            from: process.env.App_Email,
+            to: email,
+            subject: "Password Reset",
+            html: `
+       <h2 style="color:#111827;">Reset Your Password</h2>
+
+<p style="color:#4b5563; font-size:14px; line-height:1.6;">
+  We received a request to reset your password. If you made this request, click the button below to set a new password.
+</p>
+
+<div style="margin:20px 0;">
+  <a 
+    href="${resetLink}" 
+    style="
+      display:inline-block;
+      padding:12px 20px;
+      background:#4f46e5;
+      color:#ffffff;
+      text-decoration:none;
+      border-radius:8px;
+      font-weight:600;
+      font-size:14px;
+    "
+  >
+    Reset Password
+  </a>
+</div>
+
+<p style="color:#6b7280; font-size:12px; line-height:1.5;">
+  If you did not request this, you can safely ignore this email. Your password will remain unchanged.
+</p>
+
+<p style="color:#9ca3af; font-size:11px; margin-top:20px;">
+  This link will expire in 10 minutes for security reasons.
+</p>
       `,
-    });
+        });
 
-    res.json({
-      message: "Password reset link sent to your email",
-    });
+        res.json({
+            message: "Password reset link sent to your email",
+        });
 
-  } catch (err) {
-    console.log(err);
+    } catch (err) {
+        console.log(err);
 
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
+        res.status(500).json({
+            message: "Server Error",
+        });
+    }
 };
 
 
 module.exports.resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.body;
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
 
-    const user = await Userschema.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
+        const user = await Userschema.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
 
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid or expired token",
-      });
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid or expired token",
+            });
+        }
+
+
+        user.password = password;
+
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        res.json({
+            message: "Password reset successful",
+        });
+    } catch (err) {
+        console.log(err);
+
+        res.status(500).json({
+            message: "Server Error",
+        });
     }
-
-    
-    user.password = password;
-
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    res.json({
-      message: "Password reset successful",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
 };
