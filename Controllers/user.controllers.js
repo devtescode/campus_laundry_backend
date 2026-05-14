@@ -57,7 +57,7 @@ module.exports.signup = async (req, res) => {
         // const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
         await transporter.sendMail({
-            from: `"LaundryHub" <${process.env.App_Email}>`,
+            from: `"ClinqHub" <${process.env.App_Email}>`,
             to: user.email,
             subject: "Verify Your Email",
             html: `
@@ -180,7 +180,7 @@ module.exports.resendVerification = async (req, res) => {
 
 
         await transporter.sendMail({
-            from: `"LaundryHub" <${process.env.App_Email}>`,
+            from: `"ClinqHub" <${process.env.App_Email}>`,
             to: user.email,
             subject: "Verify Your Email",
             html: `
