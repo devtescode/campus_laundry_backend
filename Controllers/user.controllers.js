@@ -29,54 +29,158 @@ const transporter = nodemailer.createTransport({
 });
 
 
+
 module.exports.signup = async (req, res) => {
-    console.log(req.body)
-    try {
-        const { fullname, email, phonenumber, password, gender } = req.body;
+  console.log(req.body);
 
-        const existing = await Userschema.findOne({ email });
-        if (existing) return res.status(400).json({ msg: "Email already exists" });
+  try {
+    const { fullname, email, phonenumber, password, gender } = req.body;
 
-        const token = crypto.randomBytes(32).toString("hex");
+    // CHECK IF USER EXISTS
+    const existing = await Userschema.findOne({ email });
 
-        const user = await Userschema.create({
-            fullname,
-            email,
-            phonenumber,
-            password,
-            emailToken: token,
-            isVerified: false,
-            gender
-        });
-        console.log(user);
-
-
-        const frontendUrl = process.env.FRONTEND_URL;
-        const verifyLink = `${frontendUrl}/verify-email/${token}`; // ✅ path param style
-
-        // const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
-
-        await transporter.sendMail({
-            from: `"ClinqHub" <${process.env.App_Email}>`,
-            to: user.email,
-            subject: "Verify Your Email",
-            html: `
-                <h2>Verify Your Email</h2>
-                <p>Click the link below to verify your account:</p>
-                <a href="${verifyLink}" style="background:#4f46e5;color:white;padding:10px 20px;border-radius:6px;text-decoration:none">
-                    Verify Email
-                </a>
-            `
-        });
-
-        res.json({ msg: "User created. Verification email sent." });
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ msg: "Server error" });
+    // =========================================
+    // IF EMAIL EXISTS & VERIFIED
+    // =========================================
+    if (existing && existing.isVerified) {
+      return res.status(400).json({
+        msg: "Email already exists",
+      });
     }
-};
 
+    // =========================================
+    // IF EMAIL EXISTS BUT NOT VERIFIED
+    // =========================================
+    if (existing && !existing.isVerified) {
+
+      // CREATE NEW TOKEN
+      const token = crypto.randomBytes(32).toString("hex");
+
+      existing.emailToken = token;
+
+      // optional: update latest info
+      existing.fullname = fullname;
+      existing.phonenumber = phonenumber;
+      existing.gender = gender;
+
+      // update password too
+      existing.password = password;
+
+      await existing.save();
+
+      const frontendUrl = process.env.FRONTEND_URL;
+
+      const verifyLink = `${frontendUrl}/verify-email/${token}`;
+
+      // SEND VERIFICATION EMAIL AGAIN
+      await transporter.sendMail({
+        from: `"ClinqHub" <${process.env.App_Email}>`,
+        to: existing.email,
+        subject: "Verify Your Email",
+        html: `
+          <div style="font-family:sans-serif;padding:20px">
+            <h2>Email Verification</h2>
+
+            <p>
+              Your account already exists but has not been verified yet.
+            </p>
+
+            <p>
+              Click the button below to verify your email and continue using your account.
+            </p>
+
+            <a 
+              href="${verifyLink}" 
+              style="
+                display:inline-block;
+                margin-top:15px;
+                background:#4f46e5;
+                color:white;
+                padding:12px 20px;
+                border-radius:8px;
+                text-decoration:none;
+                font-weight:600;
+              "
+            >
+              Verify Email
+            </a>
+          </div>
+        `,
+      });
+
+      return res.json({
+        msg: "Verification email resent. Please check your inbox.",
+      });
+    }
+
+    // =========================================
+    // CREATE NEW USER
+    // =========================================
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const user = await Userschema.create({
+      fullname,
+      email,
+      phonenumber,
+      password,
+      emailToken: token,
+      isVerified: false,
+      gender,
+    });
+
+    console.log(user);
+
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    const verifyLink = `${frontendUrl}/verify-email/${token}`;
+
+    await transporter.sendMail({
+      from: `"ClinqHub" <${process.env.App_Email}>`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: `
+        <div style="font-family:sans-serif;padding:20px">
+          <h2>Verify Your Email</h2>
+
+          <p>
+            Welcome to ClinqHub 👋
+          </p>
+
+          <p>
+            Click the button below to verify your account.
+          </p>
+
+          <a 
+            href="${verifyLink}" 
+            style="
+              display:inline-block;
+              margin-top:15px;
+              background:#4f46e5;
+              color:white;
+              padding:12px 20px;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:600;
+            "
+          >
+            Verify Email
+          </a>
+        </div>
+      `,
+    });
+
+    res.json({
+      msg: "User created. Verification email sent.",
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      msg: "Server error",
+    });
+  }
+};
 
 
 
