@@ -1,5 +1,5 @@
 const express = require("express")
-const { userwelcome, signup, verifyEmail, login, resendVerification, getPosterStats, forgotPassword, resetPassword } = require("../Controllers/user.controllers")
+const { userwelcome, usersignup, verifyEmail, login, resendVerification, getPosterStats, forgotPassword, resetPassword } = require("../Controllers/user.controllers")
 const { createpost, getcreatepost, getuserpost, getsingleuserpost, delectuserpost, userapplyjob, notifications, getWasherJobs, completejob, getWasherHistory, getMessages, sendMessage, washerstats } = require("../Controllers/userpost")
 const auth = require("../auth")
 const router = express.Router()
