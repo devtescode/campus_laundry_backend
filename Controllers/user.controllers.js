@@ -25,85 +25,92 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.App_Email,
         pass: process.env.App_Password,
-    }
+    },
+     tls: {
+        rejectUnauthorized: false,
+    },
 });
 
 
 
+
 module.exports.usersignup = async (req, res) => {
-  console.log(req.body);
-  console.log("hitttttttttttttt signup");
+    console.log(req.body);
+    console.log("hitttttttttttttt signup");
 
-  try {
-    const { fullname, email, phonenumber, password, gender } = req.body;
+    try {
+        const { fullname, email, phonenumber, password, gender } = req.body;
 
-    const frontendUrl = process.env.FRONTEND_URL; // ✅ MOVE HERE (GLOBAL in function)
+        const frontendUrl = process.env.FRONTEND_URL; // ✅ MOVE HERE (GLOBAL in function)
+        console.log(frontendUrl, "frontendurl");
 
-    const existing = await Userschema.findOne({ email });
 
-    // IF VERIFIED USER EXISTS
-    if (existing && existing.isVerified) {
-      return res.status(400).json({
-        msg: "Email already exists",
-      });
+        const existing = await Userschema.findOne({ email });
+
+        // IF VERIFIED USER EXISTS
+        if (existing && existing.isVerified) {
+            return res.status(400).json({
+                msg: "Email already exists",
+            });
+        }
+
+        // IF EXISTS BUT NOT VERIFIED
+        if (existing && !existing.isVerified) {
+            const token = crypto.randomBytes(32).toString("hex");
+
+            existing.emailToken = token;
+            existing.fullname = fullname;
+            existing.phonenumber = phonenumber;
+            existing.gender = gender;
+            existing.password = password;
+
+            await existing.save();
+
+            const verifyLink = `${frontendUrl}/verify-email/${token}`;
+            console.log(verifyLink, "verifylink");
+
+            await transporter.sendMail({
+                from: `"ClinqHub" <${process.env.App_Email}>`,
+                to: existing.email,
+                subject: "Verify Your Email",
+                html: `<a href="${verifyLink}">Verify Email</a>`,
+            });
+
+            return res.json({
+                msg: "Verification email resent. Please check your inbox.",
+            });
+        }
+
+        // CREATE NEW USER
+        const token = crypto.randomBytes(32).toString("hex");
+
+        const user = await Userschema.create({
+            fullname,
+            email,
+            phonenumber,
+            password,
+            emailToken: token,
+            isVerified: false,
+            gender,
+        });
+
+        const verifyLink = `${frontendUrl}/verify-email/${token}`;
+
+        await transporter.sendMail({
+            from: `"ClinqHub" <${process.env.App_Email}>`,
+            to: user.email,
+            subject: "Verify Your Email",
+            html: `<a href="${verifyLink}">Verify Email</a>`,
+        });
+
+        res.json({
+            msg: "User created. Verification email sent.",
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: "Server error" });
     }
-
-    // IF EXISTS BUT NOT VERIFIED
-    if (existing && !existing.isVerified) {
-      const token = crypto.randomBytes(32).toString("hex");
-
-      existing.emailToken = token;
-      existing.fullname = fullname;
-      existing.phonenumber = phonenumber;
-      existing.gender = gender;
-      existing.password = password;
-
-      await existing.save();
-
-      const verifyLink = `${frontendUrl}/verify-email/${token}`;
-
-      await transporter.sendMail({
-        from: `"ClinqHub" <${process.env.App_Email}>`,
-        to: existing.email,
-        subject: "Verify Your Email",
-        html: `<a href="${verifyLink}">Verify Email</a>`,
-      });
-
-      return res.json({
-        msg: "Verification email resent. Please check your inbox.",
-      });
-    }
-
-    // CREATE NEW USER
-    const token = crypto.randomBytes(32).toString("hex");
-
-    const user = await Userschema.create({
-      fullname,
-      email,
-      phonenumber,
-      password,
-      emailToken: token,
-      isVerified: false,
-      gender,
-    });
-
-    const verifyLink = `${frontendUrl}/verify-email/${token}`;
-
-    await transporter.sendMail({
-      from: `"ClinqHub" <${process.env.App_Email}>`,
-      to: user.email,
-      subject: "Verify Your Email",
-      html: `<a href="${verifyLink}">Verify Email</a>`,
-    });
-
-    res.json({
-      msg: "User created. Verification email sent.",
-    });
-
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ msg: "Server error" });
-  }
 };
 
 
@@ -337,7 +344,7 @@ module.exports.forgotPassword = async (req, res) => {
                   This link will expire in 10 minutes for security reasons.
                 </p>
             `,
-             });
+        });
 
         res.json({
             message: "Password reset link sent to your email",
@@ -355,46 +362,46 @@ module.exports.forgotPassword = async (req, res) => {
 
 
 module.exports.resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.body;
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
 
-    const user = await Userschema.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
+        const user = await Userschema.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
 
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid or expired token",
-      });
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid or expired token",
+            });
+        }
+
+        // 🔥 CHECK IF NEW PASSWORD IS SAME AS OLD PASSWORD
+        const isSamePassword = await bcrypt.compare(password, user.password);
+
+        if (isSamePassword) {
+            return res.status(400).json({
+                message: "You cannot use your previous password",
+            });
+        }
+
+        // set new password (will be hashed by pre-save middleware)
+        user.password = password;
+
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        res.json({
+            message: "Password reset successful",
+        });
+    } catch (err) {
+        console.log(err);
+
+        res.status(500).json({
+            message: "Server Error",
+        });
     }
-
-    // 🔥 CHECK IF NEW PASSWORD IS SAME AS OLD PASSWORD
-    const isSamePassword = await bcrypt.compare(password, user.password);
-
-    if (isSamePassword) {
-      return res.status(400).json({
-        message: "You cannot use your previous password",
-      });
-    }
-
-    // set new password (will be hashed by pre-save middleware)
-    user.password = password;
-
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    res.json({
-      message: "Password reset successful",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
 };
