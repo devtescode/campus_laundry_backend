@@ -33,83 +33,40 @@ const transporter = nodemailer.createTransport({
 module.exports.signup = async (req, res) => {
   console.log(req.body);
   console.log("hitttttttttttttt signup");
-  
 
   try {
     const { fullname, email, phonenumber, password, gender } = req.body;
 
-    // CHECK IF USER EXISTS
+    const frontendUrl = process.env.FRONTEND_URL; // ✅ MOVE HERE (GLOBAL in function)
+
     const existing = await Userschema.findOne({ email });
 
-    // =========================================
-    // IF EMAIL EXISTS & VERIFIED
-    // =========================================
+    // IF VERIFIED USER EXISTS
     if (existing && existing.isVerified) {
       return res.status(400).json({
         msg: "Email already exists",
       });
     }
 
-    // =========================================
-    // IF EMAIL EXISTS BUT NOT VERIFIED
-    // =========================================
+    // IF EXISTS BUT NOT VERIFIED
     if (existing && !existing.isVerified) {
-
-      // CREATE NEW TOKEN
       const token = crypto.randomBytes(32).toString("hex");
 
       existing.emailToken = token;
-
-      // optional: update latest info
       existing.fullname = fullname;
       existing.phonenumber = phonenumber;
       existing.gender = gender;
-
-      // update password too
       existing.password = password;
 
       await existing.save();
 
-    //   const frontendUrl = process.env.FRONTEND_URL;
-    //   console.log(frontendUrl, "frontend Url for users");
-      
-
-      const verifyLink = `https://campus-laundry-backend.onrender.com/verify-email/${token}`;
-      console.log(verifyLink, "verification link for existing user");
+      const verifyLink = `${frontendUrl}/verify-email/${token}`;
 
       await transporter.sendMail({
         from: `"ClinqHub" <${process.env.App_Email}>`,
         to: existing.email,
         subject: "Verify Your Email",
-        html: `
-          <div style="font-family:sans-serif;padding:20px">
-            <h2>Email Verification</h2>
-
-            <p>
-              Your account already exists but has not been verified yet.
-            </p>
-
-            <p>
-              Click the button below to verify your email and continue using your account.
-            </p>
-
-            <a 
-              href="${verifyLink}" 
-              style="
-                display:inline-block;
-                margin-top:15px;
-                background:#4f46e5;
-                color:white;
-                padding:12px 20px;
-                border-radius:8px;
-                text-decoration:none;
-                font-weight:600;
-              "
-            >
-              Verify Email
-            </a>
-          </div>
-        `,
+        html: `<a href="${verifyLink}">Verify Email</a>`,
       });
 
       return res.json({
@@ -117,9 +74,7 @@ module.exports.signup = async (req, res) => {
       });
     }
 
-    // =========================================
     // CREATE NEW USER
-    // =========================================
     const token = crypto.randomBytes(32).toString("hex");
 
     const user = await Userschema.create({
@@ -132,45 +87,13 @@ module.exports.signup = async (req, res) => {
       gender,
     });
 
-    console.log(user);
-
-    const frontendUrl = process.env.FRONTEND_URL;
-
     const verifyLink = `${frontendUrl}/verify-email/${token}`;
 
     await transporter.sendMail({
       from: `"ClinqHub" <${process.env.App_Email}>`,
       to: user.email,
       subject: "Verify Your Email",
-      html: `
-        <div style="font-family:sans-serif;padding:20px">
-          <h2>Verify Your Email</h2>
-
-          <p>
-            Welcome to ClinqHub 👋
-          </p>
-
-          <p>
-            Click the button below to verify your account.
-          </p>
-
-          <a 
-            href="${verifyLink}" 
-            style="
-              display:inline-block;
-              margin-top:15px;
-              background:#4f46e5;
-              color:white;
-              padding:12px 20px;
-              border-radius:8px;
-              text-decoration:none;
-              font-weight:600;
-            "
-          >
-            Verify Email
-          </a>
-        </div>
-      `,
+      html: `<a href="${verifyLink}">Verify Email</a>`,
     });
 
     res.json({
@@ -179,10 +102,7 @@ module.exports.signup = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-
-    res.status(500).json({
-      msg: "Server error",
-    });
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
