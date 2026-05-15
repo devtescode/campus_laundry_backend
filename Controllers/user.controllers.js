@@ -70,11 +70,11 @@ module.exports.signup = async (req, res) => {
 
       await existing.save();
 
-      const frontendUrl = process.env.FRONTEND_URL;
-      console.log(frontendUrl, "frontend Url for users");
+    //   const frontendUrl = process.env.FRONTEND_URL;
+    //   console.log(frontendUrl, "frontend Url for users");
       
 
-      const verifyLink = `${frontendUrl}/verify-email/${token}`;
+      const verifyLink = `https://campus-laundry-backend.onrender.com/verify-email/${token}`;
       console.log(verifyLink, "verification link for existing user");
 
       await transporter.sendMail({
