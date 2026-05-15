@@ -77,7 +77,6 @@ module.exports.signup = async (req, res) => {
       const verifyLink = `${frontendUrl}/verify-email/${token}`;
       console.log(verifyLink, "verification link for existing user");
 
-      // SEND VERIFICATION EMAIL AGAIN
       await transporter.sendMail({
         from: `"ClinqHub" <${process.env.App_Email}>`,
         to: existing.email,
