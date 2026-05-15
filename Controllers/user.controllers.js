@@ -354,72 +354,95 @@ module.exports.getPosterStats = async (req, res) => {
     }
 };
 
+
+
 module.exports.forgotPassword = async (req, res) => {
-    try {
-        const FRONTEND_URL = process.env.FRONTEND_URL
-        const { email } = req.body;
-        const user = await Userschema.findOne({ email });
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found",
-            });
-        }
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 1000 * 60 * 10;
-        await user.save();
-        const resetLink = `${FRONTEND_URL}/resetpassword/${resetToken}`;
+  try {
+    const FRONTEND_URL = process.env.FRONTEND_URL;
+    const { email } = req.body;
 
-        await transporter.sendMail({
-            from: process.env.App_Email,
-            to: email,
-            subject: "Password Reset",
-            html: `
-            <h2 style="color:#111827;">Reset Your Password</h2>
+    const cleanEmail = email.toLowerCase();
 
-                <p style="color:#4b5563; font-size:14px; line-height:1.6;">
-                  We received a request to reset your password. If you made this request, click the button below to set a new password.
-                </p>
-                
-                <div style="margin:20px 0;">
-                  <a 
-                    href="${resetLink}" 
-                    style="
-                      display:inline-block;
-                      padding:12px 20px;
-                      background:#4f46e5;
-                      color:#ffffff;
-                      text-decoration:none;
-                      border-radius:8px;
-                      font-weight:600;
-                      font-size:14px;
-                    "
-                  >
-                    Reset Password
-                  </a>
-                </div>
-                
-                <p style="color:#6b7280; font-size:12px; line-height:1.5;">
-                  If you did not request this, you can safely ignore this email. Your password will remain unchanged.
-                </p>
-                
-                <p style="color:#9ca3af; font-size:11px; margin-top:20px;">
-                  This link will expire in 10 minutes for security reasons.
-                </p>
-            `,
-        });
+    const user = await Userschema.findOne({ email: cleanEmail });
 
-        res.json({
-            message: "Password reset link sent to your email",
-        });
-
-    } catch (err) {
-        console.log(err);
-
-        res.status(500).json({
-            message: "Server Error",
-        });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
+
+    // Create reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 10; // 10 mins
+
+    await user.save();
+
+    const resetLink = `${FRONTEND_URL}/resetpassword/${resetToken}`;
+
+    console.log(resetLink, "reset link");
+
+    // ✅ RESEND EMAIL
+    try {
+      await resend.emails.send({
+        from: "ClinqHub <onboarding@resend.dev>",
+        to: user.email,
+        subject: "Password Reset Request",
+        html: `
+          <div style="font-family: Arial; padding: 20px; max-width:600px;">
+            
+            <h2 style="color:#111827;">
+              Reset Your Password
+            </h2>
+
+            <p style="color:#4b5563; font-size:14px; line-height:1.6;">
+              We received a request to reset your password. Click the button below to create a new password.
+            </p>
+
+            <div style="margin:25px 0;">
+              <a href="${resetLink}"
+                style="
+                  display:inline-block;
+                  padding:12px 20px;
+                  background:#4f46e5;
+                  color:#fff;
+                  text-decoration:none;
+                  border-radius:8px;
+                  font-weight:600;
+                ">
+                Reset Password
+              </a>
+            </div>
+
+            <p style="color:#6b7280; font-size:12px;">
+              If you did not request this, ignore this email. Your password stays safe.
+            </p>
+
+            <p style="color:#9ca3af; font-size:11px;">
+              This link expires in 10 minutes for security reasons.
+            </p>
+
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.log("EMAIL ERROR:", emailErr);
+      return res.status(500).json({
+        message: "Failed to send reset email",
+      });
+    }
+
+    return res.json({
+      message: "Password reset link sent to your email",
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
 
 
