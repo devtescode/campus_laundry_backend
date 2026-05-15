@@ -365,9 +365,17 @@ module.exports.forgotPassword = async (req, res) => {
 
     const user = await Userschema.findOne({ email: cleanEmail });
 
+    // ❌ USER NOT FOUND
     if (!user) {
       return res.status(404).json({
         message: "User not found",
+      });
+    }
+
+    // ❌ EMAIL NOT VERIFIED (IMPORTANT SECURITY CHECK)
+    if (!user.isVerified) {
+      return res.status(400).json({
+        message: "Please verify your email before resetting password",
       });
     }
 
@@ -396,8 +404,8 @@ module.exports.forgotPassword = async (req, res) => {
               Reset Your Password
             </h2>
 
-            <p style="color:#4b5563; font-size:14px; line-height:1.6;">
-              We received a request to reset your password. Click the button below to create a new password.
+            <p style="color:#4b5563; font-size:14px;">
+              We received a request to reset your password. Click below to continue.
             </p>
 
             <div style="margin:25px 0;">
@@ -416,11 +424,11 @@ module.exports.forgotPassword = async (req, res) => {
             </div>
 
             <p style="color:#6b7280; font-size:12px;">
-              If you did not request this, ignore this email. Your password stays safe.
+              If you did not request this, ignore this email.
             </p>
 
             <p style="color:#9ca3af; font-size:11px;">
-              This link expires in 10 minutes for security reasons.
+              This link expires in 10 minutes.
             </p>
 
           </div>
