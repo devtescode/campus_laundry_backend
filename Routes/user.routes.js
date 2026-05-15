@@ -6,7 +6,7 @@ const router = express.Router()
 
 
 router.get("/userwelcome", userwelcome)
-router.post("/signup", signup)
+router.post("/usersignup", usersignup)
 router.get("/verify-email/:token", verifyEmail)
 router.post("/login", login)
 router.post("/resend-verification", resendVerification)

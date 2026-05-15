@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
 
 
 
-module.exports.signup = async (req, res) => {
+module.exports.usersignup = async (req, res) => {
   console.log(req.body);
   console.log("hitttttttttttttt signup");
 
