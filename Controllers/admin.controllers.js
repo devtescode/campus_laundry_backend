@@ -124,9 +124,12 @@ module.exports.getAllUsers = async (req, res) => {
           ...user,
 
           // 📊 STATS
+          
           jobs: jobsPostedCount,              // poster jobs
           washerApplied: washerAppliedCount,  // applied jobs
           jobsWashed: washerAcceptedCount,    
+          isVerified: user.isVerified ?? false, 
+          gender: user.gender,
 
           // 🎯 ROLE
           role,
