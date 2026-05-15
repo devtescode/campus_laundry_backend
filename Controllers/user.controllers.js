@@ -35,82 +35,130 @@ const transporter = nodemailer.createTransport({
 
 
 module.exports.usersignup = async (req, res) => {
-    console.log(req.body);
-    console.log("hitttttttttttttt signup");
+  console.log(req.body);
+  console.log("hitttttttttttttt signup");
 
-    try {
-        const { fullname, email, phonenumber, password, gender } = req.body;
+  try {
+    const { fullname, email, phonenumber, password, gender } = req.body;
 
-        const frontendUrl = process.env.FRONTEND_URL; // ✅ MOVE HERE (GLOBAL in function)
-        console.log(frontendUrl, "frontendurl");
+    const frontendUrl = process.env.FRONTEND_URL;
+    console.log(frontendUrl, "frontendurl");
 
+    // Normalize email (VERY IMPORTANT in production)
+    const cleanEmail = email.toLowerCase();
 
-        const existing = await Userschema.findOne({ email });
+    const existing = await Userschema.findOne({ email: cleanEmail });
 
-        // IF VERIFIED USER EXISTS
-        if (existing && existing.isVerified) {
-            return res.status(400).json({
-                msg: "Email already exists",
-            });
-        }
-
-        // IF EXISTS BUT NOT VERIFIED
-        if (existing && !existing.isVerified) {
-            const token = crypto.randomBytes(32).toString("hex");
-
-            existing.emailToken = token;
-            existing.fullname = fullname;
-            existing.phonenumber = phonenumber;
-            existing.gender = gender;
-            existing.password = password;
-
-            await existing.save();
-
-            const verifyLink = `${frontendUrl}/verify-email/${token}`;
-            console.log(verifyLink, "verifylink");
-
-            await transporter.sendMail({
-                from: `"ClinqHub" <${process.env.App_Email}>`,
-                to: existing.email,
-                subject: "Verify Your Email",
-                html: `<a href="${verifyLink}">Verify Email</a>`,
-            });
-
-            return res.json({
-                msg: "Verification email resent. Please check your inbox.",
-            });
-        }
-
-        // CREATE NEW USER
-        const token = crypto.randomBytes(32).toString("hex");
-
-        const user = await Userschema.create({
-            fullname,
-            email,
-            phonenumber,
-            password,
-            emailToken: token,
-            isVerified: false,
-            gender,
-        });
-
-        const verifyLink = `${frontendUrl}/verify-email/${token}`;
-
-        await transporter.sendMail({
-            from: `"ClinqHub" <${process.env.App_Email}>`,
-            to: user.email,
-            subject: "Verify Your Email",
-            html: `<a href="${verifyLink}">Verify Email</a>`,
-        });
-
-        res.json({
-            msg: "User created. Verification email sent.",
-        });
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ msg: "Server error" });
+    // ================================
+    // USER EXISTS & VERIFIED
+    // ================================
+    if (existing && existing.isVerified) {
+      return res.status(400).json({
+        msg: "Email already exists",
+      });
     }
+
+    // ================================
+    // USER EXISTS BUT NOT VERIFIED
+    // ================================
+    if (existing && !existing.isVerified) {
+      const token = crypto.randomBytes(32).toString("hex");
+
+      existing.emailToken = token;
+      existing.fullname = fullname;
+      existing.phonenumber = phonenumber;
+      existing.gender = gender;
+      existing.password = password;
+
+      await existing.save();
+
+      const verifyLink = `${frontendUrl}/verify-email/${token}`;
+      console.log(verifyLink, "verifylink");
+
+      // ✅ NON-BLOCKING EMAIL (CRITICAL FIX)
+      transporter.sendMail({
+        from: `"ClinqHub" <${process.env.App_Email}>`,
+        to: existing.email,
+        subject: "Verify Your Email",
+        html: `
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>Verify Your Email</h2>
+            <p>Your account exists but is not verified yet.</p>
+
+            <a href="${verifyLink}"
+              style="
+                display:inline-block;
+                padding:12px 20px;
+                background:#4f46e5;
+                color:white;
+                border-radius:8px;
+                text-decoration:none;
+              ">
+              Verify Email
+            </a>
+          </div>
+        `,
+      }).catch(err => {
+        console.log("EMAIL ERROR:", err);
+      });
+
+      return res.json({
+        msg: "Verification email resent. Please check your inbox.",
+      });
+    }
+
+    // ================================
+    // CREATE NEW USER
+    // ================================
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const user = await Userschema.create({
+      fullname,
+      email: cleanEmail,
+      phonenumber,
+      password,
+      emailToken: token,
+      isVerified: false,
+      gender,
+    });
+
+    const verifyLink = `${frontendUrl}/verify-email/${token}`;
+
+    // ✅ NON-BLOCKING EMAIL
+    transporter.sendMail({
+      from: `"ClinqHub" <${process.env.App_Email}>`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Welcome to ClinqHub 👋</h2>
+          <p>Click below to verify your account:</p>
+
+          <a href="${verifyLink}"
+            style="
+              display:inline-block;
+              padding:12px 20px;
+              background:#4f46e5;
+              color:white;
+              border-radius:8px;
+              text-decoration:none;
+            ">
+            Verify Email
+          </a>
+        </div>
+      `,
+    }).catch(err => {
+      console.log("EMAIL ERROR:", err);
+    });
+
+    res.json({
+      msg: "User created. Verification email sent.",
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 };
 
 
