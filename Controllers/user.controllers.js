@@ -227,54 +227,76 @@ module.exports.verifyEmail = async (req, res) => {
 
 
 module.exports.resendVerification = async (req, res) => {
-    try {
-        const { email } = req.body;
+  try {
+    const { email } = req.body;
 
-        const user = await Userschema.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
-        if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
+    const cleanEmail = email.toLowerCase();
 
-        // Generate new token
-        const emailToken = crypto.randomBytes(32).toString("hex");
-        user.emailToken = emailToken;
-        await user.save();
+    const user = await Userschema.findOne({ email: cleanEmail });
 
-
-        // const url = `${frontendUrl}/verify-email/${emailToken}`;
-
-
-        const frontendUrl = process.env.FRONTEND_URL;
-
-        const url = `${frontendUrl}/verify-email/${emailToken}`; // frontend verification page
-        console.log(url);
-
-        // await transporter.sendMail({
-        //     to: user.email,
-        //     subject: "Verify your email",
-        //     html: `Click <a href="${url}">here</a> to verify your email.`,
-        // });
-
-
-        await transporter.sendMail({
-            from: `"ClinqHub" <${process.env.App_Email}>`,
-            to: user.email,
-            subject: "Verify Your Email",
-            html: `
-                <h2>Verify Your Email</h2>
-                <p>Click the link below to verify your account:</p>
-                <a href="${url}" style="background:#4f46e5;color:white;padding:10px 20px;border-radius:6px;text-decoration:none">
-                    Verify Email
-                </a>
-            `
-        });
-
-        res.status(200).json({ message: "Verification email sent" });
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Server error" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    // Generate new token
+    const emailToken = crypto.randomBytes(32).toString("hex");
+    user.emailToken = emailToken;
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL;
+    const url = `${frontendUrl}/verify-email/${emailToken}`;
+
+    console.log(url, "verification url");
+
+    // ✅ RESEND EMAIL
+    try {
+      await resend.emails.send({
+        from: "ClinqHub <onboarding@resend.dev>",
+        to: user.email,
+        subject: "Verify Your Email",
+        html: `
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>Verify Your Email</h2>
+
+            <p>
+              Click the button below to verify your account.
+            </p>
+
+            <a href="${url}"
+              style="
+                display:inline-block;
+                padding:12px 20px;
+                background:#4f46e5;
+                color:white;
+                border-radius:6px;
+                text-decoration:none;
+              ">
+              Verify Email
+            </a>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.log("EMAIL ERROR:", emailErr);
+      return res.status(500).json({
+        message: "Failed to send verification email",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Verification email sent",
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
+
 
 
 module.exports.getPosterStats = async (req, res) => {
