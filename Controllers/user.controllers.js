@@ -19,19 +19,15 @@ module.exports.userwelcome = async (req, res) => {
 }
 
 
-
 const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.App_Email,
-        pass: process.env.App_Password,
-    },
-     tls: {
-        rejectUnauthorized: false,
-    },
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.App_Email,
+    pass: process.env.App_Password,
+  },
 });
-
-
 
 
 module.exports.usersignup = async (req, res) => {
