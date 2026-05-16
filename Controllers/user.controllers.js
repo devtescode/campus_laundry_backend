@@ -462,8 +462,8 @@ module.exports.resendVerification = async (req, res) => {
 
     console.log(url, "verification url");
 
-    // ✅ NODEMAILER EMAIL
-    const mailOptions = {
+    // ✅ NON-BLOCKING EMAIL SEND
+    transporter.sendMail({
       from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "Verify Your Email",
@@ -488,9 +488,9 @@ module.exports.resendVerification = async (req, res) => {
           </a>
         </div>
       `,
-    };
-
-    await transporter.sendMail(mailOptions);
+    }).catch((err) => {
+      console.log("EMAIL ERROR:", err);
+    });
 
     return res.status(200).json({
       message: "Verification email sent",
@@ -501,7 +501,6 @@ module.exports.resendVerification = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 module.exports.getPosterStats = async (req, res) => {
@@ -696,8 +695,8 @@ module.exports.forgotPassword = async (req, res) => {
 
     console.log(resetLink, "reset link");
 
-    // ✅ NODEMAILER EMAIL
-    const mailOptions = {
+    // ✅ NON-BLOCKING EMAIL SEND (IMPORTANT FIX)
+    transporter.sendMail({
       from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "Password Reset Request",
@@ -737,9 +736,9 @@ module.exports.forgotPassword = async (req, res) => {
 
         </div>
       `,
-    };
-
-    await transporter.sendMail(mailOptions);
+    }).catch((err) => {
+      console.log("EMAIL ERROR:", err);
+    });
 
     return res.json({
       message: "Password reset link sent to your email",
@@ -752,7 +751,6 @@ module.exports.forgotPassword = async (req, res) => {
     });
   }
 };
-
 
 module.exports.resetPassword = async (req, res) => {
     try {
