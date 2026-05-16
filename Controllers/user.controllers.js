@@ -425,36 +425,43 @@ module.exports.resendVerification = async (req, res) => {
 
     const cleanEmail = email.toLowerCase();
 
-    const user = await Userschema.findOne({ email: cleanEmail });
+    const user = await Userschema.findOne({
+      email: cleanEmail,
+    });
 
+    // USER NOT FOUND
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
+    // ALREADY VERIFIED
     if (user.isVerified) {
-      return res.status(400).json({ message: "Email already verified" });
+      return res.status(400).json({
+        message: "Email already verified",
+      });
     }
 
-    // Generate new token
+    // GENERATE NEW TOKEN
     const emailToken = crypto.randomBytes(32).toString("hex");
+
     user.emailToken = emailToken;
 
     await user.save();
 
     const frontendUrl = process.env.FRONTEND_URL;
-    const url = `${frontendUrl}/verify-email/${emailToken}`;
 
-    console.log(url, "verification url");
+    const verifyLink = `${frontendUrl}/verify-email/${emailToken}`;
 
-    // ================================
-    // SEND EMAIL (NODEMAILER + BREVO)
-    // ================================
+    console.log(verifyLink, "verification url");
+
+    // SEND EMAIL WITH BREVO API
     try {
-      await transporter.sendMail({
-        from: '"ClinqHub" <teslimagboola09@gmail.com>',
-        to: user.email,
-        subject: "Verify Your Email",
-        html: `
+      await sendEmail(
+        user.email,
+        "Verify Your Email",
+        `
           <div style="font-family: Arial; padding: 20px;">
             <h2>Verify Your Email</h2>
 
@@ -462,7 +469,7 @@ module.exports.resendVerification = async (req, res) => {
               Click the button below to verify your account.
             </p>
 
-            <a href="${url}"
+            <a href="${verifyLink}"
               style="
                 display:inline-block;
                 padding:12px 20px;
@@ -474,12 +481,17 @@ module.exports.resendVerification = async (req, res) => {
               Verify Email
             </a>
           </div>
-        `,
-      });
+        `
+      );
 
-      console.log("Verification email sent");
+      console.log(
+        "Verification email sent to",
+        user.email
+      );
+
     } catch (emailErr) {
       console.log("EMAIL ERROR:", emailErr);
+
       return res.status(500).json({
         message: "Failed to send verification email",
       });
@@ -491,10 +503,12 @@ module.exports.resendVerification = async (req, res) => {
 
   } catch (err) {
     console.log("SERVER ERROR:", err);
-    return res.status(500).json({ message: "Server error" });
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
-
 
 module.exports.getPosterStats = async (req, res) => {
     try {
@@ -656,54 +670,62 @@ module.exports.getPosterStats = async (req, res) => {
 module.exports.forgotPassword = async (req, res) => {
   try {
     const FRONTEND_URL = process.env.FRONTEND_URL;
+
     const { email } = req.body;
 
     const cleanEmail = email.toLowerCase();
 
-    const user = await Userschema.findOne({ email: cleanEmail });
+    const user = await Userschema.findOne({
+      email: cleanEmail,
+    });
 
-    // ❌ USER NOT FOUND
+    // USER NOT FOUND
     if (!user) {
       return res.status(404).json({
         message: "User not found",
       });
     }
 
-    // ❌ EMAIL NOT VERIFIED
+    // EMAIL NOT VERIFIED
     if (!user.isVerified) {
       return res.status(400).json({
-        message: "Please verify your email before resetting password",
+        message:
+          "Please verify your email before resetting password",
       });
     }
 
-    // Create reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    // GENERATE RESET TOKEN
+    const resetToken = crypto
+      .randomBytes(32)
+      .toString("hex");
 
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 10; // 10 mins
+
+    user.resetPasswordExpires =
+      Date.now() + 1000 * 60 * 10;
 
     await user.save();
 
-    const resetLink = `${FRONTEND_URL}/resetpassword/${resetToken}`;
+    const resetLink =
+      `${FRONTEND_URL}/resetpassword/${resetToken}`;
+
     console.log(resetLink, "reset link");
 
-    // ================================
-    // SEND EMAIL (NODEMAILER + BREVO)
-    // ================================
+    // SEND RESET EMAIL WITH BREVO API
     try {
-      await transporter.sendMail({
-        from: '"ClinqHub" <teslimagboola09@gmail.com>',
-        to: user.email,
-        subject: "Password Reset Request",
-        html: `
+      await sendEmail(
+        user.email,
+        "Password Reset Request",
+        `
           <div style="font-family: Arial; padding: 20px; max-width:600px;">
-            
+
             <h2 style="color:#111827;">
               Reset Your Password
             </h2>
 
             <p style="color:#4b5563; font-size:14px;">
-              We received a request to reset your password. Click below to continue.
+              We received a request to reset your password.
+              Click the button below to continue.
             </p>
 
             <div style="margin:25px 0;">
@@ -712,7 +734,7 @@ module.exports.forgotPassword = async (req, res) => {
                   display:inline-block;
                   padding:12px 20px;
                   background:#4f46e5;
-                  color:#fff;
+                  color:#ffffff;
                   text-decoration:none;
                   border-radius:8px;
                   font-weight:600;
@@ -722,7 +744,8 @@ module.exports.forgotPassword = async (req, res) => {
             </div>
 
             <p style="color:#6b7280; font-size:12px;">
-              If you did not request this, ignore this email.
+              If you did not request this,
+              you can safely ignore this email.
             </p>
 
             <p style="color:#9ca3af; font-size:11px;">
@@ -730,28 +753,37 @@ module.exports.forgotPassword = async (req, res) => {
             </p>
 
           </div>
-        `,
-      });
+        `
+      );
 
-      console.log("Reset password email sent");
+      console.log(
+        "Reset password email sent to",
+        user.email
+      );
+
     } catch (emailErr) {
       console.log("EMAIL ERROR:", emailErr);
+
       return res.status(500).json({
         message: "Failed to send reset email",
       });
     }
 
     return res.json({
-      message: "Password reset link sent to your email",
+      message:
+        "Password reset link sent to your email",
     });
 
   } catch (err) {
     console.log("SERVER ERROR:", err);
+
     return res.status(500).json({
       message: "Server Error",
     });
   }
 };
+
+
 
 module.exports.resetPassword = async (req, res) => {
     try {
