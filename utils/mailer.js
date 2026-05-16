@@ -8,11 +8,6 @@ const transporter = nodemailer.createTransport({
     user: process.env.BREVO_USER,
     pass: process.env.BREVO_PASS,
   },
-
-  // ⭐ IMPORTANT FOR RENDER / PRODUCTION STABILITY
-  tls: {
-    rejectUnauthorized: false,
-  },
 });
 
 module.exports = transporter;
