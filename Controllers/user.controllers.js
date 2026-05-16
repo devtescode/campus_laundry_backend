@@ -72,32 +72,35 @@ module.exports.usersignup = async (req, res) => {
       const verifyLink = `${frontendUrl}/verify-email/${token}`;
       console.log(verifyLink, "verifylink");
 
-      // ✅ SEND EMAIL (NON-BLOCKING)
-      transporter.sendMail({
-        from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-        to: existing.email,
-        subject: "Verify Your Email",
-        html: `
-          <div style="font-family: Arial; padding: 20px;">
-            <h2>Verify Your Email</h2>
-            <p>Your account exists but is not verified yet.</p>
+      try {
+        await transporter.sendMail({
+          from: '"ClinqHub" <teslimagboola09@gmail.com>',
+          to: existing.email,
+          subject: "Verify Your Email",
+          html: `
+            <div style="font-family: Arial; padding: 20px;">
+              <h2>Verify Your Email</h2>
+              <p>Your account exists but is not verified yet.</p>
 
-            <a href="${verifyLink}"
-              style="
-                display:inline-block;
-                padding:12px 20px;
-                background:#4f46e5;
-                color:white;
-                border-radius:8px;
-                text-decoration:none;
-              ">
-              Verify Email
-            </a>
-          </div>
-        `,
-      }).catch((err) => {
-        console.log("EMAIL ERROR:", err);
-      });
+              <a href="${verifyLink}"
+                style="
+                  display:inline-block;
+                  padding:12px 20px;
+                  background:#4f46e5;
+                  color:white;
+                  border-radius:8px;
+                  text-decoration:none;
+                ">
+                Verify Email
+              </a>
+            </div>
+          `,
+        });
+
+        console.log("Verification email sent (existing user)", existing.email);
+      } catch (emailErr) {
+        console.log("EMAIL ERROR (existing user):", emailErr);
+      }
 
       return res.json({
         msg: "Verification email resent. Please check your inbox.",
@@ -121,43 +124,45 @@ module.exports.usersignup = async (req, res) => {
 
     const verifyLink = `${frontendUrl}/verify-email/${token}`;
 
-    // ✅ SEND EMAIL (NON-BLOCKING)
-    transporter.sendMail({
-      from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Welcome to ClinqHub 👋 Verify Your Email",
-      html: `
-        <div style="font-family: Arial; padding: 20px;">
-          <h2>Welcome to ClinqHub 👋</h2>
-          <p>Click below to verify your account:</p>
+    try {
+      await transporter.sendMail({
+        from: "ClinqHub <teslimagboola09@gmail.com>",
+        to: user.email,
+        subject: "Welcome to ClinqHub 👋 Verify Your Email",
+        html: `
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>Welcome to ClinqHub 👋</h2>
+            <p>Click below to verify your account:</p>
 
-          <a href="${verifyLink}"
-            style="
-              display:inline-block;
-              padding:12px 20px;
-              background:#4f46e5;
-              color:white;
-              border-radius:8px;
-              text-decoration:none;
-            ">
-            Verify Email
-          </a>
-        </div>
-      `,
-    }).catch((err) => {
-      console.log("EMAIL ERROR:", err);
-    });
+            <a href="${verifyLink}"
+              style="
+                display:inline-block;
+                padding:12px 20px;
+                background:#4f46e5;
+                color:white;
+                border-radius:8px;
+                text-decoration:none;
+              ">
+              Verify Email
+            </a>
+          </div>
+        `,
+      });
 
-    res.json({
+      console.log("Welcome email sent to", user.email);
+    } catch (emailErr) {
+      console.log("EMAIL ERROR (new user):", emailErr);
+    }
+
+    return res.json({
       msg: "User created. Verification email sent.",
     });
 
   } catch (err) {
     console.log("SIGNUP ERROR:", err);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };
-
 // module.exports.usersignup = async (req, res) => {
 //   console.log("hitttttttttttttt signup");
 
@@ -462,42 +467,51 @@ module.exports.resendVerification = async (req, res) => {
 
     console.log(url, "verification url");
 
-    // ✅ NON-BLOCKING EMAIL SEND
-    transporter.sendMail({
-      from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Verify Your Email",
-      html: `
-        <div style="font-family: Arial; padding: 20px;">
-          <h2>Verify Your Email</h2>
+    // ================================
+    // SEND EMAIL (NODEMAILER + BREVO)
+    // ================================
+    try {
+      await transporter.sendMail({
+        from: '"ClinqHub" <elizadelaundry09@gmail.com>',
+        to: user.email,
+        subject: "Verify Your Email",
+        html: `
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>Verify Your Email</h2>
 
-          <p>
-            Click the button below to verify your account.
-          </p>
+            <p>
+              Click the button below to verify your account.
+            </p>
 
-          <a href="${url}"
-            style="
-              display:inline-block;
-              padding:12px 20px;
-              background:#4f46e5;
-              color:white;
-              border-radius:6px;
-              text-decoration:none;
-            ">
-            Verify Email
-          </a>
-        </div>
-      `,
-    }).catch((err) => {
-      console.log("EMAIL ERROR:", err);
-    });
+            <a href="${url}"
+              style="
+                display:inline-block;
+                padding:12px 20px;
+                background:#4f46e5;
+                color:white;
+                border-radius:6px;
+                text-decoration:none;
+              ">
+              Verify Email
+            </a>
+          </div>
+        `,
+      });
+
+      console.log("Verification email sent");
+    } catch (emailErr) {
+      console.log("EMAIL ERROR:", emailErr);
+      return res.status(500).json({
+        message: "Failed to send verification email",
+      });
+    }
 
     return res.status(200).json({
       message: "Verification email sent",
     });
 
   } catch (err) {
-    console.log("EMAIL ERROR:", err);
+    console.log("SERVER ERROR:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -692,60 +706,68 @@ module.exports.forgotPassword = async (req, res) => {
     await user.save();
 
     const resetLink = `${FRONTEND_URL}/resetpassword/${resetToken}`;
-
     console.log(resetLink, "reset link");
 
-    // ✅ NON-BLOCKING EMAIL SEND (IMPORTANT FIX)
-    transporter.sendMail({
-      from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Password Reset Request",
-      html: `
-        <div style="font-family: Arial; padding: 20px; max-width:600px;">
-          
-          <h2 style="color:#111827;">
-            Reset Your Password
-          </h2>
+    // ================================
+    // SEND EMAIL (NODEMAILER + BREVO)
+    // ================================
+    try {
+      await transporter.sendMail({
+        from: '"ClinqHub" <elizadelaundry09@gmail.com>',
+        to: user.email,
+        subject: "Password Reset Request",
+        html: `
+          <div style="font-family: Arial; padding: 20px; max-width:600px;">
+            
+            <h2 style="color:#111827;">
+              Reset Your Password
+            </h2>
 
-          <p style="color:#4b5563; font-size:14px;">
-            We received a request to reset your password. Click below to continue.
-          </p>
+            <p style="color:#4b5563; font-size:14px;">
+              We received a request to reset your password. Click below to continue.
+            </p>
 
-          <div style="margin:25px 0;">
-            <a href="${resetLink}"
-              style="
-                display:inline-block;
-                padding:12px 20px;
-                background:#4f46e5;
-                color:#fff;
-                text-decoration:none;
-                border-radius:8px;
-                font-weight:600;
-              ">
-              Reset Password
-            </a>
+            <div style="margin:25px 0;">
+              <a href="${resetLink}"
+                style="
+                  display:inline-block;
+                  padding:12px 20px;
+                  background:#4f46e5;
+                  color:#fff;
+                  text-decoration:none;
+                  border-radius:8px;
+                  font-weight:600;
+                ">
+                Reset Password
+              </a>
+            </div>
+
+            <p style="color:#6b7280; font-size:12px;">
+              If you did not request this, ignore this email.
+            </p>
+
+            <p style="color:#9ca3af; font-size:11px;">
+              This link expires in 10 minutes.
+            </p>
+
           </div>
+        `,
+      });
 
-          <p style="color:#6b7280; font-size:12px;">
-            If you did not request this, ignore this email.
-          </p>
-
-          <p style="color:#9ca3af; font-size:11px;">
-            This link expires in 10 minutes.
-          </p>
-
-        </div>
-      `,
-    }).catch((err) => {
-      console.log("EMAIL ERROR:", err);
-    });
+      console.log("Reset password email sent");
+    } catch (emailErr) {
+      console.log("EMAIL ERROR:", emailErr);
+      return res.status(500).json({
+        message: "Failed to send reset email",
+      });
+    }
 
     return res.json({
       message: "Password reset link sent to your email",
     });
 
   } catch (err) {
-    console.log("EMAIL ERROR:", err);
+    console.log("SERVER ERROR:", err);
     return res.status(500).json({
       message: "Server Error",
     });
