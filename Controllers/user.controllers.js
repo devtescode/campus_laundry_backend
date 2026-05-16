@@ -12,6 +12,7 @@ const { default: jobPost } = require("../Models/jobPost")
 const cloudinary = require('cloudinary').v2;
 // const resend = require("../utils/resend");
 const transporter = require("../utils/mailer");
+const sendEmail = require("../utils/sendEmail");
 env.config()
 
 
@@ -46,18 +47,12 @@ module.exports.usersignup = async (req, res) => {
 
     const existing = await Userschema.findOne({ email: cleanEmail });
 
-    // ================================
     // USER EXISTS & VERIFIED
-    // ================================
     if (existing && existing.isVerified) {
-      return res.status(400).json({
-        msg: "Email already exists",
-      });
+      return res.status(400).json({ msg: "Email already exists" });
     }
 
-    // ================================
     // USER EXISTS BUT NOT VERIFIED
-    // ================================
     if (existing && !existing.isVerified) {
       const token = crypto.randomBytes(32).toString("hex");
 
@@ -70,36 +65,27 @@ module.exports.usersignup = async (req, res) => {
       await existing.save();
 
       const verifyLink = `${frontendUrl}/verify-email/${token}`;
-      console.log(verifyLink, "verifylink");
 
       try {
-        await transporter.sendMail({
-          from: '"ClinqHub" <teslimagboola09@gmail.com>',
-          to: existing.email,
-          subject: "Verify Your Email",
-          html: `
+        await sendEmail(
+          existing.email,
+          "Verify Your Email",
+          `
             <div style="font-family: Arial; padding: 20px;">
               <h2>Verify Your Email</h2>
               <p>Your account exists but is not verified yet.</p>
 
               <a href="${verifyLink}"
-                style="
-                  display:inline-block;
-                  padding:12px 20px;
-                  background:#4f46e5;
-                  color:white;
-                  border-radius:8px;
-                  text-decoration:none;
-                ">
+                style="display:inline-block;padding:12px 20px;background:#4f46e5;color:white;border-radius:8px;text-decoration:none;">
                 Verify Email
               </a>
             </div>
-          `,
-        });
+          `
+        );
 
         console.log("Verification email sent (existing user)", existing.email);
       } catch (emailErr) {
-        console.log("EMAIL ERROR (existing user):", emailErr);
+        console.log("EMAIL ERROR:", emailErr);
       }
 
       return res.json({
@@ -107,9 +93,7 @@ module.exports.usersignup = async (req, res) => {
       });
     }
 
-    // ================================
     // CREATE NEW USER
-    // ================================
     const token = crypto.randomBytes(32).toString("hex");
 
     const user = await Userschema.create({
@@ -125,29 +109,21 @@ module.exports.usersignup = async (req, res) => {
     const verifyLink = `${frontendUrl}/verify-email/${token}`;
 
     try {
-      await transporter.sendMail({
-        from: "ClinqHub <teslimagboola09@gmail.com>",
-        to: user.email,
-        subject: "Welcome to ClinqHub 👋 Verify Your Email",
-        html: `
+      await sendEmail(
+        user.email,
+        "Welcome to ClinqHub 👋 Verify Your Email",
+        `
           <div style="font-family: Arial; padding: 20px;">
             <h2>Welcome to ClinqHub 👋</h2>
             <p>Click below to verify your account:</p>
 
             <a href="${verifyLink}"
-              style="
-                display:inline-block;
-                padding:12px 20px;
-                background:#4f46e5;
-                color:white;
-                border-radius:8px;
-                text-decoration:none;
-              ">
+              style="display:inline-block;padding:12px 20px;background:#4f46e5;color:white;border-radius:8px;text-decoration:none;">
               Verify Email
             </a>
           </div>
-        `,
-      });
+        `
+      );
 
       console.log("Welcome email sent to", user.email);
     } catch (emailErr) {
@@ -163,6 +139,9 @@ module.exports.usersignup = async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
+
+
+
 // module.exports.usersignup = async (req, res) => {
 //   console.log("hitttttttttttttt signup");
 
