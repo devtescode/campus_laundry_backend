@@ -472,7 +472,7 @@ module.exports.resendVerification = async (req, res) => {
     // ================================
     try {
       await transporter.sendMail({
-        from: '"ClinqHub" <elizadelaundry09@gmail.com>',
+        from: '"ClinqHub" <teslimagboola09@gmail.com>',
         to: user.email,
         subject: "Verify Your Email",
         html: `
@@ -713,7 +713,7 @@ module.exports.forgotPassword = async (req, res) => {
     // ================================
     try {
       await transporter.sendMail({
-        from: '"ClinqHub" <elizadelaundry09@gmail.com>',
+        from: '"ClinqHub" <teslimagboola09@gmail.com>',
         to: user.email,
         subject: "Password Reset Request",
         html: `
