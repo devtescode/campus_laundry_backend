@@ -72,33 +72,32 @@ module.exports.usersignup = async (req, res) => {
       const verifyLink = `${frontendUrl}/verify-email/${token}`;
       console.log(verifyLink, "verifylink");
 
-      try {
-        await transporter.sendMail({
-          from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-          to: existing.email,
-          subject: "Verify Your Email",
-          html: `
-            <div style="font-family: Arial; padding: 20px;">
-              <h2>Verify Your Email</h2>
-              <p>Your account exists but is not verified yet.</p>
+      // ✅ SEND EMAIL (NON-BLOCKING)
+      transporter.sendMail({
+        from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
+        to: existing.email,
+        subject: "Verify Your Email",
+        html: `
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>Verify Your Email</h2>
+            <p>Your account exists but is not verified yet.</p>
 
-              <a href="${verifyLink}"
-                style="
-                  display:inline-block;
-                  padding:12px 20px;
-                  background:#4f46e5;
-                  color:white;
-                  border-radius:8px;
-                  text-decoration:none;
-                ">
-                Verify Email
-              </a>
-            </div>
-          `,
-        });
-      } catch (emailErr) {
-        console.log("EMAIL ERROR:", emailErr);
-      }
+            <a href="${verifyLink}"
+              style="
+                display:inline-block;
+                padding:12px 20px;
+                background:#4f46e5;
+                color:white;
+                border-radius:8px;
+                text-decoration:none;
+              ">
+              Verify Email
+            </a>
+          </div>
+        `,
+      }).catch((err) => {
+        console.log("EMAIL ERROR:", err);
+      });
 
       return res.json({
         msg: "Verification email resent. Please check your inbox.",
@@ -122,33 +121,32 @@ module.exports.usersignup = async (req, res) => {
 
     const verifyLink = `${frontendUrl}/verify-email/${token}`;
 
-    try {
-      await transporter.sendMail({
-        from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
-        to: user.email,
-        subject: "Welcome to ClinqHub 👋 Verify Your Email",
-        html: `
-          <div style="font-family: Arial; padding: 20px;">
-            <h2>Welcome to ClinqHub 👋</h2>
-            <p>Click below to verify your account:</p>
+    // ✅ SEND EMAIL (NON-BLOCKING)
+    transporter.sendMail({
+      from: `"ClinqHub" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Welcome to ClinqHub 👋 Verify Your Email",
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Welcome to ClinqHub 👋</h2>
+          <p>Click below to verify your account:</p>
 
-            <a href="${verifyLink}"
-              style="
-                display:inline-block;
-                padding:12px 20px;
-                background:#4f46e5;
-                color:white;
-                border-radius:8px;
-                text-decoration:none;
-              ">
-              Verify Email
-            </a>
-          </div>
-        `,
-      });
-    } catch (emailErr) {
-      console.log("EMAIL ERROR:", emailErr);
-    }
+          <a href="${verifyLink}"
+            style="
+              display:inline-block;
+              padding:12px 20px;
+              background:#4f46e5;
+              color:white;
+              border-radius:8px;
+              text-decoration:none;
+            ">
+            Verify Email
+          </a>
+        </div>
+      `,
+    }).catch((err) => {
+      console.log("EMAIL ERROR:", err);
+    });
 
     res.json({
       msg: "User created. Verification email sent.",
