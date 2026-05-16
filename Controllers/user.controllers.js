@@ -510,62 +510,75 @@ module.exports.resendVerification = async (req, res) => {
   }
 };
 
-module.exports.getPosterStats = async (req, res) => {
-    try {
-        const userId = req.params.userId;
+module.exports.posterstats = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const objectId = new mongoose.Types.ObjectId(userId);
 
-        // 🧺 Jobs posted by this user
-        const jobsPosted = await jobPost.countDocuments({
-            userId,
-        });
+    // 🧺 TOTAL JOBS POSTED
+    const jobsPosted = await jobPost.countDocuments({
+      userId: objectId,
+    });
 
-        // ⏳ Pending jobs
-        const pendingJobs = await jobPost.countDocuments({
-            userId,
-            status: "Pending",
-        });
+    // ⏳ PENDING JOBS
+    const pendingJobs = await jobPost.countDocuments({
+      userId: objectId,
+      status: "Pending",
+    });
 
-        // ✅ Completed jobs
-        const completedJobs = await jobPost.countDocuments({
-            userId,
-            status: "Completed",
-        });
+    // 👷 REAL APPLIED JOBS (someone actually applied)
+    const appliedJobs = await jobPost.countDocuments({
+      userId: objectId,
+      status: "Applied",
+      applicant: { $ne: null },
+    });
 
-        // 💰 Total spent (ONLY completed jobs)
-        const totalSpentData = await jobPost.aggregate([
-            {
-                $match: {
-                    userId: new mongoose.Types.ObjectId(userId),
-                    status: "Completed",
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: "$price" },
-                },
-            },
-        ]);
+    // 🔄 IN PROGRESS (optional but useful)
+    const inProgressJobs = await jobPost.countDocuments({
+      userId: objectId,
+      status: "In Progress",
+    });
 
-        const totalSpent = totalSpentData[0]?.total || 0;
+    // ✅ COMPLETED JOBS
+    const completedJobs = await jobPost.countDocuments({
+      userId: objectId,
+      status: "Completed",
+    });
 
-        // ⭐ Replace rating with pending count (your requirement)
-        const averageRating = pendingJobs;
+    // 💰 TOTAL SPENT (ONLY COMPLETED JOBS)
+    const totalSpentData = await jobPost.aggregate([
+      {
+        $match: {
+          userId: objectId,
+          status: "Completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$price" },
+        },
+      },
+    ]);
 
-        res.json({
-            jobsPosted,
-            pendingJobs,
-            completedJobs,
-            totalSpent,
-            averageRating,
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
-    }
+    const totalSpent = totalSpentData[0]?.total || 0;
+
+    res.json({
+      jobsPosted,
+      pendingJobs,
+      appliedJobs,        // ✅ real applied jobs
+      inProgressJobs,
+      completedJobs,
+      totalSpent,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
-
-
 
 // module.exports.forgotPassword = async (req, res) => {
 //   try {

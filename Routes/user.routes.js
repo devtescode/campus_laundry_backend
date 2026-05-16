@@ -1,5 +1,5 @@
 const express = require("express")
-const { userwelcome, usersignup, verifyEmail, login, resendVerification, getPosterStats, forgotPassword, resetPassword } = require("../Controllers/user.controllers")
+const { userwelcome, usersignup, verifyEmail, login, resendVerification, posterstats, forgotPassword, resetPassword } = require("../Controllers/user.controllers")
 const { createpost, getcreatepost, getuserpost, getsingleuserpost, delectuserpost, userapplyjob, notifications, getWasherJobs, completejob, getWasherHistory, getMessages, sendMessage, washerstats } = require("../Controllers/userpost")
 const auth = require("../auth")
 const router = express.Router()
@@ -23,7 +23,7 @@ router.get("/getWasherHistory/:washerId", getWasherHistory) // Reusing getWasher
 router.get("/getmessages/:jobId", auth, getMessages)
 router.post("/sendmessages", sendMessage)
 router.get("/washerstats", auth, washerstats)
-router.get("/posterstats/:userId", getPosterStats)
+router.get("/posterstats/:userId", posterstats)
 router.post("/forgotPassword", forgotPassword)
 router.post("/resetpassword/:token", resetPassword);
 
